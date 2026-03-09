@@ -99,7 +99,7 @@ erDiagram
         bigint         id             PK  "내부 전용"
         binary(16)     wallet_id      FK  "Wallet.id 참조"
         varchar(3)     currency           "KRW | USD | JPY"
-        varchar(20)    entry_type         "CHARGE | PAYMENT | EXCHANGE_OUT | EXCHANGE_IN | ..."
+        varchar(20)    entry_type         "CHARGE | WITHDRAW | PAYMENT | PAYMENT_CANCEL | REFUND | EXCHANGE_OUT | EXCHANGE_IN"
         decimal(18_4)  amount             "항상 양수. 부호는 direction으로"
         varchar(10)    direction          "CREDIT | DEBIT"
         decimal(18_4)  balance_after      "거래 직후 잔액 (대사용)"
