@@ -1,7 +1,7 @@
 # LemonPay ERD
 
 > 멀티통화 간편결제 시스템 - ERD 문서
-> 버전: 1.1 | 최종 수정일: 2026-03-08 | 상태: 초안
+> 버전: 1.2 | 최종 수정일: 2026-03-09 | 상태: 초안
 
 ---
 
@@ -149,3 +149,30 @@ erDiagram
     Wallet          ||--o{ PaymentTransaction  : "pays"
     Wallet          ||--o{ ExchangeTransaction : "exchanges"
 ```
+
+---
+
+## 인덱스 전략
+
+> 인덱스는 "어떤 쿼리가 자주 실행되는가"에서 출발한다.
+> INSERT 빈도가 높은 테이블(LedgerEntry)은 인덱스를 최소화한다.
+
+| 테이블 | 인덱스 | 종류 | 선정 이유 | 관련 요구사항 |
+|--------|--------|------|---------|-------------|
+| `member` | `email` | UNIQUE | 로그인 시 이메일로 조회. 중복 가입 방지 | FR-401 |
+| `wallet` | `member_id` | UNIQUE | 회원의 지갑 단건 조회. 현재 1:1 관계 | FR-001 |
+| `wallet_balance` | `(wallet_id, currency)` | UNIQUE | 특정 통화 잔액 조회 + 중복 방지 | FR-002 |
+| `ledger_entry` | `(wallet_id, currency, created_at DESC)` | 복합 | 거래 내역 최신순 조회. 1천만 건 이상에서도 성능 보장 | FR-005, NFR-302 |
+| `payment_transaction` | `tx_no` | UNIQUE | 거래일련번호 외부 조회 | - |
+| `payment_transaction` | `idempotency_key` | UNIQUE | 중복 결제 방지 | FR-105 |
+| `payment_transaction` | `(wallet_id, created_at DESC)` | 복합 | 지갑별 결제 내역 최신순 조회 | FR-005 |
+| `exchange_transaction` | `tx_no` | UNIQUE | 거래일련번호 외부 조회 | - |
+| `exchange_transaction` | `(wallet_id, created_at DESC)` | 복합 | 지갑별 환전 내역 최신순 조회 | FR-005 |
+
+### 인덱스 설계 원칙
+
+1. **LedgerEntry INSERT 빈도 고려** — 모든 거래마다 INSERT가 발생하므로 인덱스 수를 최소화. `(wallet_id, currency, created_at)` 복합 인덱스 하나로 대부분의 조회 패턴 커버
+2. **UNIQUE 제약 = 인덱스 겸용** — `email`, `member_id`, `(wallet_id, currency)`, `idempotency_key`는 UNIQUE 제약이 자동으로 인덱스 역할
+3. **created_at DESC** — 거래 내역은 항상 최신순 조회이므로 내림차순 정렬 포함
+4. **transaction_id 인덱스 미적용** — `(wallet_id, currency, created_at)` 복합 인덱스로 대부분 조회 가능. 개별 추가 시 INSERT 오버헤드 대비 효과 미미
+5. **status 단독 인덱스 미적용** — 카디널리티 낮음(5개 상태). 실제 조회는 wallet_id 기반이므로 별도 인덱스 불필요. 필요 시 추후 추가
