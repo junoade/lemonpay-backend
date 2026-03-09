@@ -1,0 +1,21 @@
+# <type>(<scope>): <subject>
+#
+# Type: feat | fix | refactor | docs | test | chore | perf
+# Scope: wallet | payment | exchange | ledger | member | infra | api | config
+# Subject: 50자 이내, 명령형으로 작성
+#
+# --- 본문 (선택) ---
+# 무엇이 아닌 "왜" 변경했는지 중심으로 작성
+# 한 줄 72자 이내
+#
+# --- 푸터 (이슈 연결) ---
+# Refs: #이슈번호
+# Closes: #이슈번호
+#
+# --- 예시 ---
+# feat(wallet): WalletBalance 엔티티 구현
+#
+# - 통화별 잔액 스냅샷 관리 엔티티
+# - @Version 기반 낙관적 락 적용
+#
+# Refs: #4
