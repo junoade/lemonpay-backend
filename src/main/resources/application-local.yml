@@ -6,8 +6,25 @@ spring:
     password:
   h2:
     console:
+      ## 검증(dev) / 운영(main)에선 주의
       enabled: true
       path: /h2-console
   jpa:
     hibernate:
-      ddl-auto: update
+      ## 검증(dev) / 운영(main)에선 주의
+      ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate:
+        ## 검증(dev) / 운영(main)에선 주의
+        format_sql: true
+        highlight_sql: true
+        use_sql_comments: true
+        generate_statistics: true
+
+logging:
+  level:
+    ## 검증(dev) / 운영(main)에선 주의
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+    org.hibernate.stat: debug
