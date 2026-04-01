@@ -7,7 +7,6 @@ import com.lemonpay.ledger.domain.LedgerEntryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -25,7 +24,7 @@ public class LedgerEntryRepositoryImpl implements LedgerEntryRepository {
 
     @Override
     public Optional<LedgerEntry> findTopByWalletIdAndCurrencyOrderByIdDesc(UUID walletId, Currency currency) {
-        return Optional.empty();
+        return ledgerEntryJpaRepository.findTopByWalletIdAndCurrencyOrderByIdDesc(walletId, currency);
     }
 
     @Override
