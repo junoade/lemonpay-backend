@@ -1,5 +1,6 @@
 package com.lemonpay.wallet.infrastructure;
 
+import com.lemonpay.common.domain.Currency;
 import com.lemonpay.wallet.domain.WalletBalance;
 import com.lemonpay.wallet.domain.WalletBalanceRepository;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +13,7 @@ import java.util.UUID;
 @Repository
 @RequiredArgsConstructor
 public class WalletBalanceRepositoryImpl implements WalletBalanceRepository {
-    private final WalletBalanceRepository walletBalanceRepository;
+    private final WalletBalanceJpaRepository walletBalanceRepository;
 
     @Override
     public WalletBalance save(WalletBalance walletBalance) {
@@ -20,7 +21,7 @@ public class WalletBalanceRepositoryImpl implements WalletBalanceRepository {
     }
 
     @Override
-    public Optional<WalletBalance> findByWalletIdAndCurrency(UUID walletId, String currency) {
+    public Optional<WalletBalance> findByWalletIdAndCurrency(UUID walletId, Currency currency) {
         return walletBalanceRepository.findByWalletIdAndCurrency(walletId, currency);
     }
 
