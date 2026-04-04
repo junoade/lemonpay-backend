@@ -26,8 +26,7 @@ public class Member extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
-    // TODO: E.164 형식 (+821012345678)
-    @Column(nullable = true)
+    @Column(nullable = false)
     private String phone;
 
     @Enumerated(EnumType.STRING)
@@ -35,9 +34,9 @@ public class Member extends BaseEntity {
     private MemberStatus status;
 
     private Member(String email, String name, String phone) {
-        this.email = email;
-        this.name = name;
-        this.phone = phone;
+        this.email = validateEmail(email);
+        this.name = validateName(name);
+        this.phone = validatePhone(phone);
         this.status = MemberStatus.ACTIVE;
     }
 
@@ -46,6 +45,7 @@ public class Member extends BaseEntity {
     }
 
     public void suspend() {
+        throwsWhenMemberStatusClose();
         if (status != MemberStatus.ACTIVE) {
             throw new IllegalStateException("활성화된 사용자만 이용 중지가 가능합니다.");
         }
@@ -53,9 +53,48 @@ public class Member extends BaseEntity {
     }
 
     public void close() {
-        if (status == MemberStatus.CLOSED) {
-            throw new IllegalStateException("이미 탈퇴된 회원입니다.");
-        }
+        throwsWhenMemberStatusClose();
         this.status = MemberStatus.CLOSED;
+    }
+
+    public void activate() {
+        throwsWhenMemberStatusClose();
+        if(status == MemberStatus.ACTIVE) {
+            throw new IllegalArgumentException("이미 활성화 된 사용자 입니다.");
+        }
+        this.status = MemberStatus.ACTIVE;
+    }
+
+    private String validateEmail(String email) {
+        if(email == null || email.isBlank()) {
+            throw new IllegalArgumentException("email은 필수 입력값 입니다.");
+        }
+        return email.trim();
+    }
+
+    private String validateName(String name) {
+        if(name == null || name.isBlank()) {
+            throw new IllegalArgumentException("name은 필수 입력값 입니다.");
+        }
+        return name.trim();
+    }
+
+    private String validatePhone(String phone) {
+        if(phone == null || phone.isBlank()) {
+            throw new IllegalArgumentException("phone은 필수 입력값 입니다.");
+        }
+
+        String normalized = phone.trim();
+        if(!normalized.matches("^\\+[1-9]\\d{1,14}$")) {
+            throw new IllegalArgumentException("phone은 E.164 형식이어야 합니다.");
+        }
+
+        return normalized;
+    }
+
+    private void throwsWhenMemberStatusClose() {
+        if(status == MemberStatus.CLOSED) {
+            throw new IllegalStateException("이미 탈퇴한 회원입니다.");
+        }
     }
 }
