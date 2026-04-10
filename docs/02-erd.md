@@ -80,7 +80,7 @@ erDiagram
         varchar(100) name             "지갑 이름"
         boolean      is_primary       "주 지갑 여부 (default: true)"
         varchar(20)  product_code     "형식: {TYPE4}-V{VERSION} (예: BASC-V1)"
-        varchar(20)  status           "ACTIVE | FROZEN | SUSPENDED | CLOSED"
+        varchar(20)  status           "ACTIVE | FROZEN | CLOSED"
         timestamp    created_at
         timestamp    updated_at
     }
