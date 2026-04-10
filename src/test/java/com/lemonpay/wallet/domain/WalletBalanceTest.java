@@ -23,7 +23,6 @@ class WalletBalanceTest {
         @BeforeEach
         void init() {
             wallet = createTestWallet();
-            wallet.initDefaultCurrency();
         }
 
         @Test
