@@ -50,6 +50,7 @@ public class Wallet extends BaseEntity {
         this.productCode = productCode;
         this.isPrimary = false;
         this.status = WalletStatus.ACTIVE;
+        initDefaultCurrency();
     }
     public static Wallet create(Member member, String name, String productCode) {
         return new Wallet(member, name, productCode);
@@ -59,17 +60,18 @@ public class Wallet extends BaseEntity {
         this.isPrimary = isPrimary;
     }
 
+    public void activate() {
+        this.status.validateTransition(WalletStatus.ACTIVE);
+        this.status = WalletStatus.ACTIVE;
+    }
+
     public void freeze() {
-        if (this.status == WalletStatus.FROZEN) {
-            throw new IllegalStateException("이미 동결된 지갑입니다.");
-        }
+        this.status.validateTransition(WalletStatus.FROZEN);
         this.status = WalletStatus.FROZEN;
     }
 
     public void close() {
-        if (this.status == WalletStatus.CLOSED) {
-            throw new IllegalStateException("이미 해지된 지갑입니다.");
-        }
+        this.status.validateTransition(WalletStatus.CLOSED);
         this.status = WalletStatus.CLOSED;
     }
 
