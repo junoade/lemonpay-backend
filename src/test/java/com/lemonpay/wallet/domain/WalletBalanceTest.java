@@ -65,7 +65,6 @@ class WalletBalanceTest {
         @BeforeEach
         void init() {
             wallet = createTestWallet();
-            wallet.initDefaultCurrency();
             wallet.getBalance(Currency.KRW).increase(Money.won(2000));
         }
 
