@@ -68,7 +68,6 @@ public class LocalDataInitializerConfig {
         LedgerEntry ledgerEntry = LedgerEntry.of(
                 wallet.getId(),
                 amount,
-                Direction.CREDIT,
                 balance.toMoney(),
                 EntryType.CHARGE
         );
