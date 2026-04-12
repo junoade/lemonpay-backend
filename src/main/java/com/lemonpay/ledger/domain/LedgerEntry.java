@@ -41,7 +41,6 @@ public class LedgerEntry extends BaseEntity {
     public static LedgerEntry of(
             UUID walletId,
             Money amount,
-            Direction direction,
             Money balanceAfter,
             EntryType entryType
     ) {
@@ -49,7 +48,7 @@ public class LedgerEntry extends BaseEntity {
                 walletId,
                 amount.currency(),
                 amount.amount(),
-                direction,
+                entryType.getDirection(),
                 balanceAfter.amount(),
                 entryType
         );
