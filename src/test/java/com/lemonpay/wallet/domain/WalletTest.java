@@ -54,6 +54,24 @@ class WalletTest {
         }
     }
 
+    @Nested
+    @DisplayName("지갑 조회 테스트")
+    public class Select {
+        Wallet wallet;
+
+        @BeforeEach
+        void init() {
+            wallet = createTestWallet();
+        }
+
+        @Test
+        @DisplayName("미지원 통화 잔액 조회시 예외가 발생한다.")
+        void selectUnsupportedCurrency_throwsException() {
+            assertThrows(IllegalArgumentException.class, () -> wallet.getBalance(Currency.valueOf("EUR")));
+        }
+
+    }
+
 
     @Nested
     @DisplayName("지갑 상태 전이 테스트")
@@ -67,12 +85,19 @@ class WalletTest {
         }
 
         @Test
-        @DisplayName("ACTIVE 상태에서 freeze 하면 FROZEN 된다")
+        @DisplayName("ACTIVE 상태에서 freeze 하면 FROZEN 된다.")
         void activeToFrozen_thenSuccess() {
 
             wallet.freeze();
 
             assertEquals(WalletStatus.FROZEN, wallet.getStatus());
+        }
+
+        @Test
+        @DisplayName("ACTIVE 사태에서 close 하면 CLOSE 된다.")
+        void activeToClose_thenSuccess() {
+            wallet.close();
+            assertEquals(WalletStatus.CLOSED, wallet.getStatus());
         }
 
         @Test
@@ -82,6 +107,28 @@ class WalletTest {
             wallet.close();
             assertEquals(WalletStatus.CLOSED, wallet.getStatus());
         }
+
+        @Test
+        @DisplayName("FROZEN 상태에서 close 하면 CLOSE 된다.")
+        void frozenToActive_thenSuccess() {
+            wallet.freeze();
+            wallet.activate();
+            assertEquals(WalletStatus.ACTIVE, wallet.getStatus());
+        }
+
+        @Test
+        @DisplayName("ACTIVE 상태에서 다시 active로 하려고 하면 예외가 발생한다.")
+        void activeToActive_throwsException() {
+            assertThrows(IllegalStateException.class, () -> wallet.activate());
+        }
+
+        @Test
+        @DisplayName("FROZEN 상태에서 다시 freeze 하려고 하면 예외가 발생한다.")
+        void frozenToFrozen_throwsException() {
+            wallet.freeze();
+            assertThrows(IllegalStateException.class, () -> wallet.freeze());
+        }
+
 
         @Test
         @DisplayName("CLOSED 된 상태에서 상태 전이시 예외가 발생한다.")
@@ -94,6 +141,8 @@ class WalletTest {
                     () -> assertThrows(IllegalStateException.class, () -> wallet.activate())
             );
         }
+
+
     }
 
     private Member createTestMember() {
