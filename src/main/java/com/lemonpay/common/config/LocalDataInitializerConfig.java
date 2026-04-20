@@ -52,7 +52,6 @@ public class LocalDataInitializerConfig {
             memberRepository.save(member);
 
             Wallet wallet = Wallet.create(member, "기본 지갑", "BASC-V1");
-            wallet.initDefaultCurrency();
             walletRepository.save(wallet);
 
             charge(wallet, Money.won(50_000));
