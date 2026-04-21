@@ -46,7 +46,7 @@ public class LocalDataInitializerConfig {
             String suffix = String.format("%04d", i);
             String email = "test" + suffix + "@lemonpay.com";
             String name = "test" + suffix;
-            String phone = "test" + suffix;
+            String phone = "+82101234" + suffix;
 
             Member member = Member.create(email, name,phone);
             memberRepository.save(member);
