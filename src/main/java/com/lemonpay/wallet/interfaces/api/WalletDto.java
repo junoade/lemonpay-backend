@@ -9,6 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -85,5 +86,52 @@ public class WalletDto {
             );
         }
     }
+
+    @Schema(description = "거래 내역 조회 응답 DTO")
+    public record HistoryResponse(
+            @Schema(description = "지갑 ID")
+            UUID walletId,
+
+            @Schema(description = "거래 내역 목록")
+            List<HistoryItem> content,
+
+            @Schema(description = "현재 페이지 번호 (0부터 시작)", example = "0")
+            int page,
+
+            @Schema(description = "페이지 크기", example = "10")
+            int size,
+
+            @Schema(description = "전체 요소 수", example = "42")
+            long totalElements,
+
+            @Schema(description = "전체 페이지 수", example = "5")
+            int totalPages
+    ) { }
+
+    @Schema(description = "거래 내역 단건")
+    public record HistoryItem(
+            @Schema(description = "원장 항목 ID", example = "1")
+            Long id,
+
+            @Schema(description = "통화", example = "KRW")
+            String currency,
+
+            @Schema(description = "거래 금액", example = "10000.0000")
+            BigDecimal amount,
+
+            @Schema(description = "입출금 방향", example = "CREDIT",
+                    allowableValues = {"CREDIT", "DEBIT"})
+            String direction,
+
+            @Schema(description = "거래 유형", example = "CHARGE",
+                    allowableValues = {"CHARGE", "PAYMENT", "EXCHANGE_IN", "EXCHANGE_OUT", "REFUND"})
+            String entryType,
+
+            @Schema(description = "거래 후 잔액", example = "50000.0000")
+            BigDecimal balanceAfter,
+
+            @Schema(description = "거래 일시", example = "2026-04-25T10:00:00")
+            LocalDateTime createdAt
+    ) { }
 
 }

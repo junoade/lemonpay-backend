@@ -5,6 +5,7 @@ import com.lemonpay.common.domain.Money;
 import com.lemonpay.wallet.application.ChargeUseCase;
 import com.lemonpay.wallet.application.WalletQueryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -37,4 +38,8 @@ public class WalletV1Controller implements WalletV1ApiSpec {
         );
     }
 
+    @Override
+    public ResponseEntity<WalletDto.HistoryResponse> getHistory(UUID walletId, String currency, Pageable pageable) {
+        return null;
+    }
 }
