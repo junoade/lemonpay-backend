@@ -1,8 +1,8 @@
 package com.lemonpay.wallet.interfaces.api;
 
+import com.lemonpay.common.domain.Money;
 import com.lemonpay.wallet.application.ChargeResult;
-import com.lemonpay.wallet.domain.Wallet;
-import com.lemonpay.wallet.domain.WalletBalance;
+import com.lemonpay.wallet.application.WalletQueryResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -47,7 +47,7 @@ public class WalletDto {
                     chargeResult.walletId(),
                     chargeResult.chargeMoney().currency().toString(),
                     chargeResult.chargeMoney().amount(),
-                    WalletBalanceItem.from(chargeResult.afterWalletBalance())
+                    WalletBalanceItem.from(chargeResult.afterBalance())
             );
         }
 
@@ -58,19 +58,30 @@ public class WalletDto {
             @Schema(description = "지갑 ID", example = "550e8400-e29b-41d4-a716-446655440000")
             UUID walletId,
 
-            @Schema(description = "충전 후 다통화 잔액 정보")
+            @Schema(description = "현재 다통화 잔액 정보")
             List<WalletBalanceItem> balances
-    ) { }
+    ) {
+        public static BalancesResponse from(WalletQueryResult walletQueryResult) {
+            var balances = walletQueryResult.walletBalances()
+                    .stream().map(WalletBalanceItem::from)
+                    .toList();
+
+            return new BalancesResponse(
+                    walletQueryResult.walletId(),
+                    balances
+            );
+        }
+    }
 
     @Schema(description = "지갑 내 단일 통화 잔액 정보")
     public record WalletBalanceItem(
             String currency,
             BigDecimal amount
     ) {
-        public static WalletBalanceItem from(WalletBalance walletBalance) {
+        public static WalletBalanceItem from(Money money) {
             return new WalletBalanceItem(
-                    walletBalance.getCurrency().toString(),
-                    walletBalance.getBalance()
+                    money.currency().toString(),
+                    money.amount()
             );
         }
     }

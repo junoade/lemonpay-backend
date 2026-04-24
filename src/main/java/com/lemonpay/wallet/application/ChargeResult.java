@@ -8,9 +8,9 @@ import java.util.UUID;
 public record ChargeResult(
         UUID walletId,
         Money chargeMoney,
-        WalletBalance afterWalletBalance
+        Money afterBalance
 ) {
     public static ChargeResult of(UUID walletId, Money money, WalletBalance afterWalletBalance) {
-        return new ChargeResult(walletId, money, afterWalletBalance);
+        return new ChargeResult(walletId, money, afterWalletBalance.toMoney());
     }
 }
