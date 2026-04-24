@@ -3,12 +3,12 @@ package com.lemonpay.wallet.interfaces.api;
 import com.lemonpay.common.domain.Currency;
 import com.lemonpay.common.domain.Money;
 import com.lemonpay.wallet.application.ChargeUseCase;
+import com.lemonpay.wallet.application.WalletQueryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -17,6 +17,7 @@ import java.util.UUID;
 public class WalletV1Controller implements WalletV1ApiSpec {
 
     private final ChargeUseCase chargeUsecase;
+    private final WalletQueryService walletQueryService;
 
     @Override
     public ResponseEntity<WalletDto.ChargeResponse> charge(UUID walletId, WalletDto.ChargeRequest request) {
@@ -30,6 +31,10 @@ public class WalletV1Controller implements WalletV1ApiSpec {
 
     @Override
     public ResponseEntity<WalletDto.BalancesResponse> getBalances(UUID walletId) {
-        return ResponseEntity.ok(new WalletDto.BalancesResponse(walletId, List.of()));
+        var result = walletQueryService.getWalletBalances(walletId);
+        return ResponseEntity.ok(
+                WalletDto.BalancesResponse.from(result)
+        );
     }
+
 }
