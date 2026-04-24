@@ -31,7 +31,8 @@ public class ChargeUseCase {
    private static final BigDecimal MAX_KRW_CHARGE_AMOUNT = BigDecimal.valueOf(1_000_000);
 
    @Transactional
-   public ChargeResult charge(UUID walletId, Currency currency, Money money) {
+   public ChargeResult charge(UUID walletId, Money money) {
+       Currency currency = money.currency();
        Wallet wallet = walletService.getWallet(walletId);
        wallet.validateChargeable();
        validateKrwCharge(money);

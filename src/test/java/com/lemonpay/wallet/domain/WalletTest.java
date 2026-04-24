@@ -143,7 +143,12 @@ class WalletTest {
             );
         }
 
-
+        @Test
+        @DisplayName("FROZEN 된 상태에서 validateChargable 하더라도 예외는 발생하지 않는다.")
+        void validateChargeable_thenSuccess() {
+            wallet.freeze();
+            assertDoesNotThrow(() -> wallet.validateChargeable());
+        }
     }
 
     private Member createTestMember() {

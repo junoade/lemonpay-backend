@@ -59,12 +59,39 @@ class ChargeUseCaseTest {
             given(walletBalanceService.getWalletBalance(walletId, Currency.KRW)).willReturn(walletBalance);
 
             // when
-            chargeUsecase.charge(walletId, Currency.KRW, chargeAmount);
+            chargeUsecase.charge(walletId, chargeAmount);
 
             // then
             then(wallet).should().validateChargeable();
             assertThat(walletBalance.getBalance()).isEqualByComparingTo(chargeAmount.amount());
 
+            assertLedgerEntry(chargeAmount, walletBalance);
+        }
+
+        @Test
+        @DisplayName("FROZEN 상태인 지갑도 KRW 충전이 가능하며, 원장에 정상적으로 기록된다.")
+        void chargeKrw_withFrozenWallet() {
+            // given
+            UUID walletId = UUID.randomUUID();
+            Money chargeAmount = Money.won(2000);
+
+            Wallet wallet = mock(Wallet.class);
+            WalletBalance walletBalance = WalletBalance.zero(wallet, Currency.KRW);
+            given(walletService.getWallet(walletId)).willReturn(wallet);
+            given(walletBalanceService.getWalletBalance(walletId, Currency.KRW)).willReturn(walletBalance);
+
+            // when
+            wallet.freeze();
+            chargeUsecase.charge(walletId, chargeAmount);
+
+            // then
+            then(wallet).should().validateChargeable();
+            assertThat(walletBalance.getBalance()).isEqualByComparingTo(chargeAmount.amount());
+
+            assertLedgerEntry(chargeAmount, walletBalance);
+        }
+
+        private void assertLedgerEntry(Money chargeAmount, WalletBalance walletBalance) {
             ArgumentCaptor<LedgerEntry> captor = ArgumentCaptor.forClass(LedgerEntry.class);
             then(ledgerEntryRepository).should().save(captor.capture());
             LedgerEntry saved = captor.getValue();
@@ -95,7 +122,7 @@ class ChargeUseCaseTest {
             // given(walletBalanceService.getWalletBalance(walletId, Currency.KRW)).willReturn(walletBalance);
 
             // when & then
-            assertThatThrownBy(() -> chargeUsecase.charge(walletId, Currency.KRW, chargeAmount))
+            assertThatThrownBy(() -> chargeUsecase.charge(walletId, chargeAmount))
                     .isInstanceOf(IllegalStateException.class);
             then(ledgerEntryRepository).should(never()).save(any());
 
@@ -114,7 +141,7 @@ class ChargeUseCaseTest {
             given(walletService.getWallet(walletId)).willReturn(wallet);
             // given(walletBalanceService.getWalletBalance(walletId, Currency.KRW)).willReturn(walletBalance);
 
-            assertThatThrownBy(() -> chargeUsecase.charge(walletId, Currency.KRW, chargeAmount))
+            assertThatThrownBy(() -> chargeUsecase.charge(walletId, chargeAmount))
                     .isInstanceOf(CoreException.class);
 
             then(ledgerEntryRepository).should(never()).save(any());
@@ -133,7 +160,7 @@ class ChargeUseCaseTest {
             given(walletService.getWallet(walletId)).willReturn(wallet);
             // given(walletBalanceService.getWalletBalance(walletId, Currency.KRW)).willReturn(walletBalance);
 
-            assertThatThrownBy(() -> chargeUsecase.charge(walletId, Currency.KRW, chargeAmount))
+            assertThatThrownBy(() -> chargeUsecase.charge(walletId, chargeAmount))
                     .isInstanceOf(CoreException.class);
 
             then(ledgerEntryRepository).should(never()).save(any());

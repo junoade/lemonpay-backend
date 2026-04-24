@@ -24,7 +24,7 @@ public class WalletV1Controller implements WalletV1ApiSpec {
 
         Currency currency = Currency.valueOf(request.currency());
         Money money = Money.of(request.amount(), currency);
-        var result = chargeUsecase.charge(walletId, currency, money);
+        var result = chargeUsecase.charge(walletId, money);
 
         return ResponseEntity.ok(WalletDto.ChargeResponse.from(result));
     }
