@@ -1,5 +1,8 @@
 package com.lemonpay.wallet.interfaces.api;
 
+import com.lemonpay.wallet.application.ChargeResult;
+import com.lemonpay.wallet.domain.Wallet;
+import com.lemonpay.wallet.domain.WalletBalance;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -38,7 +41,17 @@ public class WalletDto {
 
             @Schema(description = "충전 후 잔액 정보")
             WalletBalanceItem balance
-    ) { }
+    ) {
+        public static ChargeResponse from(ChargeResult chargeResult) {
+            return new ChargeResponse(
+                    chargeResult.walletId(),
+                    chargeResult.chargeMoney().currency().toString(),
+                    chargeResult.chargeMoney().amount(),
+                    WalletBalanceItem.from(chargeResult.afterWalletBalance())
+            );
+        }
+
+    }
 
     @Schema(description = "잔액 조회 응답 DTO")
     public record BalancesResponse(
@@ -53,6 +66,13 @@ public class WalletDto {
     public record WalletBalanceItem(
             String currency,
             BigDecimal amount
-    ) { }
+    ) {
+        public static WalletBalanceItem from(WalletBalance walletBalance) {
+            return new WalletBalanceItem(
+                    walletBalance.getCurrency().toString(),
+                    walletBalance.getBalance()
+            );
+        }
+    }
 
 }

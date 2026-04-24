@@ -1,5 +1,9 @@
 package com.lemonpay.wallet.interfaces.api;
 
+import com.lemonpay.common.domain.Currency;
+import com.lemonpay.common.domain.Money;
+import com.lemonpay.wallet.application.ChargeUseCase;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -9,12 +13,19 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/wallets")
+@RequiredArgsConstructor
 public class WalletV1Controller implements WalletV1ApiSpec {
+
+    private final ChargeUseCase chargeUsecase;
 
     @Override
     public ResponseEntity<WalletDto.ChargeResponse> charge(UUID walletId, WalletDto.ChargeRequest request) {
-        return ResponseEntity.ok(new WalletDto.ChargeResponse(walletId, "KRW", request.amount(), null));
 
+        Currency currency = Currency.valueOf(request.currency());
+        Money money = Money.of(request.amount(), currency);
+        var result = chargeUsecase.charge(walletId, currency, money);
+
+        return ResponseEntity.ok(WalletDto.ChargeResponse.from(result));
     }
 
     @Override
