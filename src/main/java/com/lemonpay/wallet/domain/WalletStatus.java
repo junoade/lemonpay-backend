@@ -1,5 +1,8 @@
 package com.lemonpay.wallet.domain;
 
+import com.lemonpay.common.exception.CoreException;
+import com.lemonpay.common.exception.ErrorType;
+
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -31,7 +34,8 @@ public enum WalletStatus {
 
     public void validateTransition(WalletStatus next) {
         if(!canTransitionTo(next)) {
-            throw new IllegalStateException(
+            throw new CoreException(
+                    ErrorType.INVALID_WALLET_STATE_TRANSITION,
                     "지갑 상태 전이 불가: %s -> %s".formatted(this.name(), next.name()));
         }
     }
