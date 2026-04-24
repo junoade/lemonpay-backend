@@ -2,11 +2,13 @@ package com.lemonpay.wallet.interfaces.api;
 
 import com.lemonpay.common.domain.Money;
 import com.lemonpay.wallet.application.ChargeResult;
+import com.lemonpay.wallet.application.LedgerEntryItem;
 import com.lemonpay.wallet.application.WalletQueryResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
+import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -106,7 +108,18 @@ public class WalletDto {
 
             @Schema(description = "전체 페이지 수", example = "5")
             int totalPages
-    ) { }
+    ) {
+        public static HistoryResponse from(UUID walletId, Page<LedgerEntryItem> page) {
+            return new HistoryResponse(
+                    walletId,
+                    page.getContent().stream().map(HistoryItem::from).toList(),
+                    page.getNumber(),
+                    page.getSize(),
+                    page.getTotalElements(),
+                    page.getTotalPages()
+            );
+        }
+    }
 
     @Schema(description = "거래 내역 단건")
     public record HistoryItem(
@@ -132,6 +145,18 @@ public class WalletDto {
 
             @Schema(description = "거래 일시", example = "2026-04-25T10:00:00")
             LocalDateTime createdAt
-    ) { }
+    ) {
+        public static HistoryItem from(LedgerEntryItem item) {
+            return new HistoryItem(
+                    item.id(),
+                    item.currency().toString(),
+                    item.amount(),
+                    item.direction().toString(),
+                    item.entryType().toString(),
+                    item.balanceAfter(),
+                    item.createdAt()
+            );
+        }
+    }
 
 }

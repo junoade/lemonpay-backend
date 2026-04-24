@@ -3,6 +3,7 @@ package com.lemonpay.common.interfaces;
 import com.lemonpay.common.exception.CoreException;
 import com.lemonpay.common.exception.ErrorType;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -64,5 +65,15 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .internalServerError()
                 .body(ErrorResponse.of(ErrorType.INTERNAL_SERVER_ERROR));
+    }
+
+    /** 잘못된 sort 필드명이 넘어왔을 때 500 대신 400 반환 */
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ErrorResponse> handlePropertyReferenceException(PropertyReferenceException e) {
+        log.warn("Invalid sort field: {}", e.getPropertyName());
+        return ResponseEntity
+                .badRequest()
+                .body(ErrorResponse.of(ErrorType.INVALID_REQUEST,
+                        "정렬 기준이 올바르지 않습니다: " + e.getPropertyName()));
     }
 }

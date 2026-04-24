@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -48,7 +49,8 @@ public interface WalletV1ApiSpec {
             @PathVariable("walletId") UUID walletId,
 
             @Parameter(description = "통화 필터 (선택)", example = "KRW")
-            @RequestParam(required = false) String currency,
+            @RequestParam(value = "currency", required = false) String currency,
 
+            @ParameterObject
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable);
 }
