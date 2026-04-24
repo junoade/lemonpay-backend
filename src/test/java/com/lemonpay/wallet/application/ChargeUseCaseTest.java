@@ -2,6 +2,7 @@ package com.lemonpay.wallet.application;
 
 import com.lemonpay.common.domain.Currency;
 import com.lemonpay.common.domain.Money;
+import com.lemonpay.common.exception.CoreException;
 import com.lemonpay.ledger.domain.Direction;
 import com.lemonpay.ledger.domain.EntryType;
 import com.lemonpay.ledger.domain.LedgerEntry;
@@ -114,7 +115,7 @@ class ChargeUseCaseTest {
             // given(walletBalanceService.getWalletBalance(walletId, Currency.KRW)).willReturn(walletBalance);
 
             assertThatThrownBy(() -> chargeUsecase.charge(walletId, Currency.KRW, chargeAmount))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(CoreException.class);
 
             then(ledgerEntryRepository).should(never()).save(any());
         }
@@ -133,7 +134,7 @@ class ChargeUseCaseTest {
             // given(walletBalanceService.getWalletBalance(walletId, Currency.KRW)).willReturn(walletBalance);
 
             assertThatThrownBy(() -> chargeUsecase.charge(walletId, Currency.KRW, chargeAmount))
-                    .isInstanceOf(IllegalArgumentException.class);
+                    .isInstanceOf(CoreException.class);
 
             then(ledgerEntryRepository).should(never()).save(any());
         }

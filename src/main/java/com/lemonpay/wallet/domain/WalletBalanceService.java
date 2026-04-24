@@ -1,6 +1,8 @@
 package com.lemonpay.wallet.domain;
 
 import com.lemonpay.common.domain.Currency;
+import com.lemonpay.common.exception.CoreException;
+import com.lemonpay.common.exception.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +19,7 @@ public class WalletBalanceService {
     @Transactional(readOnly = true)
     public WalletBalance getWalletBalance(UUID walletId, Currency currency) {
         return walletBalanceRepository.findByWalletIdAndCurrency(walletId, currency)
-                .orElseThrow(() -> new RuntimeException("Wallet not found"));
+                .orElseThrow(() -> new CoreException(ErrorType.WALLET_NOT_FOUND));
     }
 
     @Transactional
@@ -29,7 +31,7 @@ public class WalletBalanceService {
     public List<WalletBalance> getWalletBalances(UUID walletId) {
         List<WalletBalance> walletBalances = walletBalanceRepository.findAllByWalletId(walletId);
         if (walletBalances.isEmpty()) {
-            throw new RuntimeException("Wallet not found");
+            throw new CoreException(ErrorType.WALLET_NOT_FOUND);
         }
         return walletBalances;
     }

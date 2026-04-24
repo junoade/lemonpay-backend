@@ -2,6 +2,8 @@ package com.lemonpay.wallet.domain;
 
 import com.lemonpay.common.domain.BaseEntity;
 import com.lemonpay.common.domain.Currency;
+import com.lemonpay.common.exception.CoreException;
+import com.lemonpay.common.exception.ErrorType;
 import com.lemonpay.member.domain.Member;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -89,12 +91,12 @@ public class Wallet extends BaseEntity {
         return balances.stream()
                 .filter(b -> b.getCurrency() == currency)
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("미지원 통화이거나 현재 지갑에 해당 통화 잔액이 없습니다. 현재 통화" + currency));
+                .orElseThrow(() -> new CoreException(ErrorType.INVALID_CURRENCY));
     }
 
     public void validateChargeable() {
         if(status == WalletStatus.CLOSED) {
-            throw new IllegalStateException("충전이 불가능한 상태입니다.");
+            throw new CoreException(ErrorType.WALLET_NOT_CHARGEABLE);
         }
     }
 }

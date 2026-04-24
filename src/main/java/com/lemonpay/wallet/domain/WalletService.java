@@ -1,5 +1,7 @@
 package com.lemonpay.wallet.domain;
 
+import com.lemonpay.common.exception.CoreException;
+import com.lemonpay.common.exception.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -12,6 +14,6 @@ public class WalletService {
 
     public Wallet getWallet(UUID walletId) {
         return walletRepository.findById(walletId)
-                .orElseThrow(() -> new IllegalArgumentException("Wallet not found"));
+                .orElseThrow(() -> new CoreException(ErrorType.WALLET_NOT_FOUND));
     }
 }

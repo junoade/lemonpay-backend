@@ -3,6 +3,8 @@ package com.lemonpay.wallet.application;
 
 import com.lemonpay.common.domain.Currency;
 import com.lemonpay.common.domain.Money;
+import com.lemonpay.common.exception.CoreException;
+import com.lemonpay.common.exception.ErrorType;
 import com.lemonpay.ledger.domain.EntryType;
 import com.lemonpay.ledger.domain.LedgerEntry;
 import com.lemonpay.ledger.domain.LedgerEntryRepository;
@@ -55,15 +57,17 @@ public class ChargeUseCase {
      */
     private void validateKrwCharge(Money money) {
         if(money.currency() != Currency.KRW) {
-            throw new IllegalArgumentException("Invalid currency");
+            throw new CoreException(ErrorType.INVALID_CURRENCY);
         }
 
         if(money.amount().compareTo(MIN_KRW_CHARGE_AMOUNT) < 0) {
-            throw new IllegalArgumentException("Invalid amount: " + money.amount());
+            throw new CoreException(ErrorType.INVALID_CHARGE_AMOUNT,
+                    "최소 충전 금액은 %s원입니다.".formatted(MIN_KRW_CHARGE_AMOUNT.toPlainString()));
         }
 
         if(money.amount().compareTo(MAX_KRW_CHARGE_AMOUNT) > 0) {
-            throw new IllegalArgumentException("Invalid amount: " + money.amount());
+            throw new CoreException(ErrorType.INVALID_CHARGE_AMOUNT,
+                    "최대 충전 금액은 %s원입니다.".formatted(MAX_KRW_CHARGE_AMOUNT.toPlainString()));
         }
     }
 }

@@ -2,6 +2,7 @@ package com.lemonpay.wallet.domain;
 
 import com.lemonpay.common.domain.Currency;
 import com.lemonpay.common.domain.Money;
+import com.lemonpay.common.exception.CoreException;
 import com.lemonpay.member.domain.Member;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -119,14 +120,14 @@ class WalletTest {
         @Test
         @DisplayName("ACTIVE 상태에서 다시 active로 하려고 하면 예외가 발생한다.")
         void activeToActive_throwsException() {
-            assertThrows(IllegalStateException.class, () -> wallet.activate());
+            assertThrows(CoreException.class, () -> wallet.activate());
         }
 
         @Test
         @DisplayName("FROZEN 상태에서 다시 freeze 하려고 하면 예외가 발생한다.")
         void frozenToFrozen_throwsException() {
             wallet.freeze();
-            assertThrows(IllegalStateException.class, () -> wallet.freeze());
+            assertThrows(CoreException.class, () -> wallet.freeze());
         }
 
 
@@ -136,9 +137,9 @@ class WalletTest {
             wallet.close();
 
             assertAll(
-                    () ->assertThrows(IllegalStateException.class, () -> wallet.freeze()),
-                    () -> assertThrows(IllegalStateException.class, () -> wallet.close()),
-                    () -> assertThrows(IllegalStateException.class, () -> wallet.activate())
+                    () ->assertThrows(CoreException.class, () -> wallet.freeze()),
+                    () -> assertThrows(CoreException.class, () -> wallet.close()),
+                    () -> assertThrows(CoreException.class, () -> wallet.activate())
             );
         }
 
