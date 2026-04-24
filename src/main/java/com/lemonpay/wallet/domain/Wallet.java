@@ -91,4 +91,10 @@ public class Wallet extends BaseEntity {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("미지원 통화이거나 현재 지갑에 해당 통화 잔액이 없습니다. 현재 통화" + currency));
     }
+
+    public void validateChargeable() {
+        if(status == WalletStatus.CLOSED) {
+            throw new IllegalStateException("충전이 불가능한 상태입니다.");
+        }
+    }
 }
