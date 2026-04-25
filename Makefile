@@ -36,8 +36,12 @@ build:
 run:
 	set -a && source .env.dev && set +a && SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun
 
-# 테스트 실행
+# 테스트 실행 (dev 프로파일, MySQL 컨테이너 필요)
 test:
-	./gradlew test
+	set -a && source .env.dev && set +a && SPRING_PROFILES_ACTIVE=dev ./gradlew test
 
-.PHONY: up up-db down ps logs logs-app logs-db build run test
+# 테스트 실행 (local 프로파일, H2 인메모리 - MySQL 불필요)
+test-local:
+	./gradlew test -Dspring.profiles.active=local
+
+.PHONY: up up-db down ps logs logs-app logs-db build run test test-local
