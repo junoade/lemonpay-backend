@@ -36,4 +36,8 @@ build:
 run:
 	set -a && source .env.dev && set +a && SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun
 
-.PHONY: up up-db down ps logs logs-app logs-db build run
+# 테스트 실행
+test:
+	./gradlew test
+
+.PHONY: up up-db down ps logs logs-app logs-db build run test
