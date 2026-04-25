@@ -1,0 +1,49 @@
+name: lemonpay-dev
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: lemonpay-mysql-dev
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - lemonpay-mysql-dev-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  app:
+    image: lemonpay-backend:dev
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: lemonpay-app-dev
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: ${DB_URL_DOCKER}
+      DB_DRIVER: ${DB_DRIVER}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  lemonpay-mysql-dev-data:
+
+
+# bridge는 컨테이너들끼리 통신할 수 있는 가상 네트워크
+# 따로 명시하는 경우는 2가지
+# (1) 서비스가 여러 개로 늘어나는 상황에서 네트워크를 분리하고 싶을 때 (db-network, app-network 따로 두는 경우)
+# (2)  외부에서 이미 만들어둔 네트워크에 붙이고 싶을 때 (external: true)
+# network.default.driver:bridge
