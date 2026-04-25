@@ -63,6 +63,132 @@ com.lemonpay/
 | 개발 (스테이징) | dev | dev | docker-compose | MySQL | Swagger ON |
 | 운영 | main | prod | EC2 + RDS | MySQL | 비활성 |
 
+### 실행 방법
+
+#### Dev 환경 실행
+
+두 가지 방식으로 실행 지원
+
+- 로컬 개발: MySQL만 컨테이너로 실행하고, 앱은 `bootRun`으로 실행
+- 통합 실행: MySQL과 앱을 모두 컨테이너로 실행
+
+
+#### (1) 로컬 개발 방식
+
+1. 환경변수 파일을 준비합니다.
+
+```bash
+cp .env.dev.example .env.dev
+```
+
+2. MySQL 컨테이너를 실행합니다.
+
+Make 명령:
+
+```bash
+make up-db
+```
+
+원본 명령:
+
+```bash
+docker compose -f docker/docker-compose.dev.yml --env-file .env.dev up -d mysql
+```
+
+3. Spring Boot 애플리케이션을 `dev` 프로필로 실행합니다.
+
+Make 명령:
+
+```bash
+make run
+```
+
+원본 명령:
+
+```bash
+set -a && source .env.dev && set +a && SPRING_PROFILES_ACTIVE=dev ./gradlew bootRun
+```
+
+4. 실행 상태를 확인합니다.
+
+Make 명령:
+
+```bash
+make ps
+```
+
+원본 명령:
+
+```bash
+docker compose -f docker/docker-compose.dev.yml --env-file .env.dev ps
+```
+
+- MySQL 컨테이너가 `healthy` 상태인지 확인합니다.
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+
+#### (2) 전체 컨테이너 실행 방식
+
+1. 환경변수 파일을 준비합니다.
+
+```bash
+cp .env.dev.example .env.dev
+```
+
+2. MySQL + 앱 컨테이너를 함께 실행합니다.
+
+Make 명령:
+
+```bash
+make up
+```
+
+원본 명령:
+
+```bash
+docker compose -f docker/docker-compose.dev.yml --env-file .env.dev up -d
+```
+
+3. 실행 상태를 확인합니다.
+
+Make 명령:
+
+```bash
+make ps
+```
+
+원본 명령:
+
+```bash
+docker compose -f docker/docker-compose.dev.yml --env-file .env.dev ps
+```
+
+- `mysql` 컨테이너가 `healthy` 상태인지 확인합니다.
+- `app` 컨테이너가 `Up` 상태이고, 로그상 Spring Boot가 정상 기동되었는지 확인합니다.
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+
+#### Make 명령어
+
+| 명령어 | 설명 |
+|--------|------|
+| `make up` | MySQL + 앱 컨테이너 전체 실행 |
+| `make up-db` | MySQL 컨테이너만 실행 |
+| `make down` | 컨테이너 중지 및 제거 |
+| `make ps` | 컨테이너 상태 확인 |
+| `make logs` | 전체 컨테이너 로그 확인 |
+| `make logs-app` | 앱 컨테이너 로그 확인 |
+| `make logs-db` | MySQL 컨테이너 로그 확인 |
+| `make build` | 백엔드 Docker 이미지 빌드 |
+| `make run` | `.env.dev`를 읽어 `dev` 프로필로 `bootRun` 실행 |
+| `make test` | dev 프로파일로 테스트 실행 (MySQL 컨테이너 필요) |
+| `make test-local` | local 프로파일로 테스트 실행 (H2, MySQL 불필요) |
+
+#### 주의사항
+
+- 로컬에서 `3306` 포트를 이미 사용 중이면 MySQL 컨테이너가 기동되지 않을 수 있음.
+- `.env.dev` 파일이 없으면 `dev` 프로필의 datasource 환경변수를 읽지 못해 애플리케이션이 실행되지 않음.
+- `make test`는 `dev` 프로파일로 MySQL 컨테이너에 연결합니다. 실행 전 `make up-db` 등으로 MySQL 컨테이너가 기동되었는지 확인하세요. 
+- MySQL 없이 테스트만 빠르게 실행하려면 `make test-local`을 사용하세요. (H2 인메모리 DB)
+
 
 ## 7. API Docs
 
