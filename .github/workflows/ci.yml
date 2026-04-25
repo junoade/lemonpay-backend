@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  pull_request:
+      branches: [dev, main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # Gradle 공식 액션 - 빌드 캐시 + 의존성 캐시 자동 처리
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      # 현재는 단일 모듈 이므로 --continue 는 제외함
+      - name: Build
+        run: ./gradlew build
+
+      # 테스트 실패해도 리포트 수집은 항상 실행
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v4
+        if: always()
+        with:
+          report_paths: "**/build/test-results/test/TEST-*.xml"
+          detailed_summary: true
+
+      - name: Docker build (main PR only)
+        if: github.base_ref == 'main'
+        run: docker build -t lemonpay-backend .
