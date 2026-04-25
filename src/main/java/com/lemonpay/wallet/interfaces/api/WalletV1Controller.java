@@ -5,12 +5,15 @@ import com.lemonpay.common.domain.Money;
 import com.lemonpay.wallet.application.ChargeUseCase;
 import com.lemonpay.wallet.application.WalletQueryService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/wallets")
 @RequiredArgsConstructor
@@ -37,4 +40,16 @@ public class WalletV1Controller implements WalletV1ApiSpec {
         );
     }
 
+    @Override
+    public ResponseEntity<WalletDto.HistoryResponse> getHistory(UUID walletId, String currency, Pageable pageable) {
+        log.warn("getHistory - walletId: {}, currency: {}, pageable: {}", walletId, currency, pageable);       Currency currencyEnum = null;
+
+        if(currency != null && !currency.isBlank()) {
+            currencyEnum = Currency.valueOf(currency);
+        }
+        var resultPage = walletQueryService.queryLedgerEntries(walletId, currencyEnum, pageable);
+        return ResponseEntity.ok(
+                WalletDto.HistoryResponse.from(walletId, resultPage)
+        );
+    }
 }
