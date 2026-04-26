@@ -1,5 +1,7 @@
 package com.lemonpay.common.auth;
 
+import com.lemonpay.common.exception.CoreException;
+import com.lemonpay.common.exception.ErrorType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -27,13 +29,17 @@ public class UserContextInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         String userIdHeader = request.getHeader(HEADER_USER_ID);
 
-        if (userIdHeader != null && !userIdHeader.isBlank()) {
-            try {
-                UUID userId = UUID.fromString(userIdHeader);
-                UserContextHolder.set(new UserContext(userId));
-            } catch (IllegalArgumentException e) {
-                log.warn("유효하지 않은 X-USER-ID 헤더값: {}", userIdHeader);
-            }
+        if (userIdHeader == null || userIdHeader.isBlank()) {
+            log.warn("인증 헤더 누락: path={}", request.getRequestURI());
+            throw new CoreException(ErrorType.UNAUTHORIZED, "X-USER-ID 헤더가 필요합니다.");
+        }
+
+        try {
+            UUID userId = UUID.fromString(userIdHeader);
+            UserContextHolder.set(new UserContext(userId));
+        } catch (IllegalArgumentException e) {
+            log.warn("유효하지 않은 X-USER-ID 헤더값: {}", userIdHeader);
+            throw new CoreException(ErrorType.INVALID_REQUEST, "X-USER-ID가 유효하지 않습니다.");
         }
 
         return true;
