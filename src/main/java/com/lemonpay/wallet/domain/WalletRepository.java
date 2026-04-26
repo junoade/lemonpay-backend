@@ -14,4 +14,5 @@ public interface WalletRepository {
 
     boolean existsByMember(Member member);
     boolean existsByMemberId(UUID memberId);
+    boolean existsByIdAndMemberId(UUID walletId, UUID memberId);
 }

@@ -14,6 +14,7 @@ public enum ErrorType {
     INVALID_CHARGE_AMOUNT(HttpStatus.BAD_REQUEST, "충전 금액이 정책 범위를 벗어났습니다."),
     WALLET_NOT_FOUND(HttpStatus.NOT_FOUND, "지갑을 찾을 수 없습니다."),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
+    FORBIDDEN(HttpStatus.FORBIDDEN, "허용되지 않은 접근입니다."),
 
     // 422
     WALLET_NOT_CHARGEABLE(HttpStatus.UNPROCESSABLE_ENTITY, "충전이 불가능한 지갑 상태입니다."),

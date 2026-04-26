@@ -1,9 +1,11 @@
 package com.lemonpay.wallet.application;
 
+import com.lemonpay.common.auth.UserContextHolder;
 import com.lemonpay.common.domain.Currency;
 import com.lemonpay.ledger.domain.LedgerEntry;
 import com.lemonpay.ledger.domain.LedgerEntryRepository;
 import com.lemonpay.wallet.domain.WalletBalanceService;
+import com.lemonpay.wallet.domain.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,11 +18,13 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class WalletQueryService {
 
+    private final WalletService walletService;
     private final WalletBalanceService walletBalanceService;
     private final LedgerEntryRepository ledgerEntryRepository;
 
     @Transactional(readOnly = true)
     public WalletQueryResult getWalletBalances(UUID walletId) {
+        validateAccess(walletId);
         var walletBalances = walletBalanceService.getWalletBalances(walletId);
         return WalletQueryResult.of(walletId, walletBalances);
     }
@@ -29,6 +33,7 @@ public class WalletQueryService {
     public Page<LedgerEntryItem> queryLedgerEntries(
             UUID walletId, Currency currency, Pageable pageable
     ) {
+        validateAccess(walletId);
         Page<LedgerEntry> result;
         if (currency == null) {
             result = ledgerEntryRepository.findByWalletIdOrderByIdDesc(walletId, pageable);
@@ -37,6 +42,11 @@ public class WalletQueryService {
         }
 
         return result.map(LedgerEntryItem::from);
+    }
+
+    private void validateAccess(UUID walletId) {
+        UUID userId = UserContextHolder.getUserId();
+        walletService.validateWalletAccess(walletId, userId);
     }
 
 

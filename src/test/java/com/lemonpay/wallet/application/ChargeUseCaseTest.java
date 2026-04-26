@@ -1,8 +1,11 @@
 package com.lemonpay.wallet.application;
 
+import com.lemonpay.common.auth.UserContext;
+import com.lemonpay.common.auth.UserContextHolder;
 import com.lemonpay.common.domain.Currency;
 import com.lemonpay.common.domain.Money;
 import com.lemonpay.common.exception.CoreException;
+import com.lemonpay.common.exception.ErrorType;
 import com.lemonpay.ledger.domain.Direction;
 import com.lemonpay.ledger.domain.EntryType;
 import com.lemonpay.ledger.domain.LedgerEntry;
@@ -14,6 +17,7 @@ import com.lemonpay.wallet.domain.WalletService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -30,6 +34,8 @@ import static org.mockito.Mockito.mock;
 @ExtendWith(MockitoExtension.class)
 class ChargeUseCaseTest {
 
+    private final UUID currentUserId = UUID.randomUUID();
+
     @InjectMocks
     private ChargeUseCase chargeUsecase;
 
@@ -39,6 +45,11 @@ class ChargeUseCaseTest {
     private WalletBalanceService walletBalanceService;
     @Mock
     private LedgerEntryRepository ledgerEntryRepository;
+
+    @AfterEach
+    void clearUserContext() {
+        UserContextHolder.clear();
+    }
 
     @DisplayName("지갑 충전 성공 케이스")
     @Nested
@@ -50,12 +61,14 @@ class ChargeUseCaseTest {
             // given
             UUID walletId = UUID.randomUUID();
             Money chargeAmount = Money.won(2000);
+            UserContextHolder.set(new UserContext(currentUserId));
 
             Wallet wallet = mock(Wallet.class);
             WalletBalance walletBalance = WalletBalance.zero(wallet, Currency.KRW);
 
             willDoNothing().given(wallet).validateChargeable();
             given(walletService.getWallet(walletId)).willReturn(wallet);
+            willDoNothing().given(walletService).validateWalletAccess(walletId, currentUserId);
             given(walletBalanceService.getWalletBalance(walletId, Currency.KRW)).willReturn(walletBalance);
 
             // when
@@ -74,10 +87,12 @@ class ChargeUseCaseTest {
             // given
             UUID walletId = UUID.randomUUID();
             Money chargeAmount = Money.won(2000);
+            UserContextHolder.set(new UserContext(currentUserId));
 
             Wallet wallet = mock(Wallet.class);
             WalletBalance walletBalance = WalletBalance.zero(wallet, Currency.KRW);
             given(walletService.getWallet(walletId)).willReturn(wallet);
+            willDoNothing().given(walletService).validateWalletAccess(walletId, currentUserId);
             given(walletBalanceService.getWalletBalance(walletId, Currency.KRW)).willReturn(walletBalance);
 
             // when
@@ -112,6 +127,7 @@ class ChargeUseCaseTest {
         void chargeKrw_withInvalidWallet() {
             // given
             UUID walletId = UUID.randomUUID();
+            UserContextHolder.set(new UserContext(currentUserId));
             Wallet wallet = mock(Wallet.class);
 
             Money chargeAmount = Money.won(2000);
@@ -119,6 +135,7 @@ class ChargeUseCaseTest {
 
             willThrow(IllegalStateException.class).given(wallet).validateChargeable();
             given(walletService.getWallet(walletId)).willReturn(wallet);
+            willDoNothing().given(walletService).validateWalletAccess(walletId, currentUserId);
             // given(walletBalanceService.getWalletBalance(walletId, Currency.KRW)).willReturn(walletBalance);
 
             // when & then
@@ -133,12 +150,14 @@ class ChargeUseCaseTest {
         void chargeKrw_withLessThanMinimumAmount() {
             // given
             UUID walletId = UUID.randomUUID();
+            UserContextHolder.set(new UserContext(currentUserId));
             Wallet wallet = mock(Wallet.class);
 
             Money chargeAmount = Money.won(100);
             WalletBalance walletBalance = WalletBalance.zero(wallet, Currency.KRW);
 
             given(walletService.getWallet(walletId)).willReturn(wallet);
+            willDoNothing().given(walletService).validateWalletAccess(walletId, currentUserId);
             // given(walletBalanceService.getWalletBalance(walletId, Currency.KRW)).willReturn(walletBalance);
 
             assertThatThrownBy(() -> chargeUsecase.charge(walletId, chargeAmount))
@@ -152,17 +171,44 @@ class ChargeUseCaseTest {
         void chargeKrw_withBiggerThanMaximumAmount() {
             // given
             UUID walletId = UUID.randomUUID();
+            UserContextHolder.set(new UserContext(currentUserId));
             Wallet wallet = mock(Wallet.class);
 
             Money chargeAmount = Money.won(1_000_001);
             WalletBalance walletBalance = WalletBalance.zero(wallet, Currency.KRW);
 
             given(walletService.getWallet(walletId)).willReturn(wallet);
+            willDoNothing().given(walletService).validateWalletAccess(walletId, currentUserId);
             // given(walletBalanceService.getWalletBalance(walletId, Currency.KRW)).willReturn(walletBalance);
 
             assertThatThrownBy(() -> chargeUsecase.charge(walletId, chargeAmount))
                     .isInstanceOf(CoreException.class);
 
+            then(ledgerEntryRepository).should(never()).save(any());
+        }
+
+        @Test
+        @DisplayName("지갑 소유자와 다른 사용자 ID가 전달되면 충전은 실패한다.")
+        void chargeKrw_withInvalidMemberId() {
+            // given
+            UUID walletId = UUID.randomUUID();
+            UUID otherUserId = UUID.randomUUID();
+            UserContextHolder.set(new UserContext(otherUserId));
+
+            Wallet wallet = mock(Wallet.class);
+            Money chargeAmount = Money.won(5000);
+
+            given(walletService.getWallet(walletId)).willReturn(wallet);
+            willThrow(new CoreException(ErrorType.FORBIDDEN, "지갑 소유자가 상이합니다."))
+                    .given(walletService)
+                    .validateWalletAccess(walletId, otherUserId);
+
+            // when & then
+            assertThatThrownBy(() -> chargeUsecase.charge(walletId, chargeAmount))
+                    .isInstanceOf(CoreException.class)
+                    .hasMessageContaining("지갑 소유자가 상이합니다.");
+
+            then(wallet).should(never()).validateChargeable();
             then(ledgerEntryRepository).should(never()).save(any());
         }
     }

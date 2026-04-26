@@ -44,4 +44,9 @@ public class WalletRepositoryImpl implements WalletRepository {
     public boolean existsByMemberId(UUID memberId) {
         return walletJpaRepository.existsByMemberId(memberId);
     }
+
+    @Override
+    public boolean existsByIdAndMemberId(UUID walletId, UUID memberId) {
+        return walletJpaRepository.existsByIdAndMemberId(walletId, memberId);
+    }
 }
