@@ -99,4 +99,8 @@ public class Wallet extends BaseEntity {
             throw new CoreException(ErrorType.WALLET_NOT_CHARGEABLE);
         }
     }
+
+    public boolean isOwnedBy(UUID userId) {
+        return member.getId().equals(userId);
+    }
 }

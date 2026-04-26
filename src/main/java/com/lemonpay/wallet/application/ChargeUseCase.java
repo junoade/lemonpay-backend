@@ -1,6 +1,7 @@
 package com.lemonpay.wallet.application;
 
 
+import com.lemonpay.common.auth.UserContextHolder;
 import com.lemonpay.common.domain.Currency;
 import com.lemonpay.common.domain.Money;
 import com.lemonpay.common.exception.CoreException;
@@ -33,7 +34,10 @@ public class ChargeUseCase {
    @Transactional
    public ChargeResult charge(UUID walletId, Money money) {
        Currency currency = money.currency();
+       UUID userId = UserContextHolder.getUserId();
+
        Wallet wallet = walletService.getWallet(walletId);
+       walletService.validateWalletAccess(walletId, userId);
        wallet.validateChargeable();
        validateKrwCharge(money);
 
