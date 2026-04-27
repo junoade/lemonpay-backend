@@ -9,6 +9,7 @@ import com.lemonpay.member.domain.Member;
 import com.lemonpay.member.domain.MemberRepository;
 import com.lemonpay.wallet.domain.Wallet;
 import com.lemonpay.wallet.domain.WalletBalance;
+import com.lemonpay.wallet.domain.WalletBalanceRepository;
 import com.lemonpay.wallet.domain.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ public class LocalDataInitializerConfig {
     private final MemberRepository memberRepository;
     private final WalletRepository walletRepository;
     private final LedgerEntryRepository ledgerEntryRepository;
+    private final WalletBalanceRepository walletBalanceRepository;
 
     @Bean
     public ApplicationRunner localDataInitializer() {
@@ -63,6 +65,7 @@ public class LocalDataInitializerConfig {
     private void charge(Wallet wallet, Money amount) {
         WalletBalance balance = wallet.getBalance(amount.currency());
         balance.increase(amount);
+        walletBalanceRepository.save(balance);
 
         LedgerEntry ledgerEntry = LedgerEntry.of(
                 wallet.getId(),
