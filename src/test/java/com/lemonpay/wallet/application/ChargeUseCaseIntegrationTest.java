@@ -26,10 +26,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.math.BigDecimal;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,8 +51,16 @@ public class ChargeUseCaseIntegrationTest {
 
     @BeforeEach
     public void init() {
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        int randomNumber = ThreadLocalRandom.current().nextInt(10_000_000, 100_000_000);
         savedMember = memberRepository.save(
-                Member.create("test@test.com", "test", "+821012341234"));
+                Member.create(
+                        "test-" + suffix + "@test.com",
+                        "test-" + suffix,
+                        "+8210" + randomNumber
+                )
+        );
+
         savedWallet = walletRepository.save(Wallet.create(savedMember, "testWallet", "VASC-V1"));
         savedWalletBalance = walletBalanceRepository
                 .findByWalletIdAndCurrency(savedWallet.getId(), Currency.KRW)
