@@ -35,7 +35,7 @@ public enum WalletStatus {
     public void validateTransition(WalletStatus next) {
         if(!canTransitionTo(next)) {
             throw new CoreException(
-                    ErrorType.INVALID_WALLET_STATE_TRANSITION,
+                    ErrorType.INVALID_STATE_TRANSITION,
                     "지갑 상태 전이 불가: %s -> %s".formatted(this.name(), next.name()));
         }
     }

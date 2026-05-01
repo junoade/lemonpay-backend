@@ -13,12 +13,13 @@ public enum ErrorType {
     INVALID_CURRENCY(HttpStatus.BAD_REQUEST, "지원하지 않는 통화입니다."),
     INVALID_CHARGE_AMOUNT(HttpStatus.BAD_REQUEST, "충전 금액이 정책 범위를 벗어났습니다."),
     WALLET_NOT_FOUND(HttpStatus.NOT_FOUND, "지갑을 찾을 수 없습니다."),
+    NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않습니다."),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "허용되지 않은 접근입니다."),
 
     // 422
     WALLET_NOT_CHARGEABLE(HttpStatus.UNPROCESSABLE_ENTITY, "충전이 불가능한 지갑 상태입니다."),
-    INVALID_WALLET_STATE_TRANSITION(HttpStatus.UNPROCESSABLE_ENTITY, "허용되지 않는 상태 전이입니다."),
+    INVALID_STATE_TRANSITION(HttpStatus.UNPROCESSABLE_ENTITY, "허용되지 않는 상태 전이입니다."),
 
     // 5xx
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다.");
