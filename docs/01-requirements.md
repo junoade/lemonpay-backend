@@ -41,6 +41,12 @@
 | US-M01 | **신규 사용자**로서, **회원가입 시 지갑이 자동으로 생성**되기를 원한다. **바로 서비스를 이용하기 위해서**이다. | Must |
 | US-M02 | **회원**으로서, **로그인하여 지갑과 거래 내역에 접근**하고 싶다. **금융 데이터를 안전하게 보호하기 위해서**이다. | Must |
 
+### 1.5 가맹점 (Merchant)
+| ID      | 유저 스토리 | 우선순위 |
+|---------|-----------|---------|
+| US-MC01 | **가맹점**으로서, **레몬페이에 결제 요청을 보내고 결제 결과를 callback으로 받고** 싶다. **결제 처리를 자동화하기 위해서**이다. | Must |
+| US-MC02 | **가맹점**으로서, **내 가맹점으로 발생한 결제를 정산 대상으로 식별**하고 싶다. **실제 수취 금액을 관리하기 위해서**이다. | Must |
+
 ---
 
 ## 2. 기능적 요구사항 (Functional Requirements)
@@ -88,6 +94,16 @@
 |----|---------|-------------------------------|
 | FR-401 | 시스템은 이메일 기반 회원 가입을 지원해야 한다. | - 이메일 유니크 제약 조건 <br> - 회원 상태: ACTIVE, SUSPENDED, CLOSED <br> - 가입 시 지갑 자동 생성 (FR-001) |
 | FR-402 | 시스템은 기본 인증(authentication)을 지원해야 한다. | - 세션 기반 또는 토큰 기반 인증 (포트폴리오 범위) <br> - 보호된 엔드포인트는 유효한 인증 필요 |
+
+
+### 2.6 가맹점 도메인 (Merchant Domain)
+
+| ID     | 요구사항 | 수용 기준 (Acceptance Criteria) |
+|--------|------|-----------------------------|
+| FR-501 | 시스템은 결제 요청의 수취 주체가 되는 가맹점 정보를 관리해야 한다. | - Merchant는 고유 ID, name, callbackUrl, status를 가진다 <br> - 상태: ACTIVE, SUSPENDED, CLOSED <br> - callbackUrl은 결제 결과를 가맹점 서버로 통지하는 용도로 사용된다 |
+| FR-502 | 시스템은 결제 요청 전에 가맹점의 결제 가능 상태를 검증해야 한다. | - ACTIVE 상태의 가맹점만 결제 요청 가능 <br> - SUSPENDED, CLOSED 상태의 가맹점은 결제 요청 불가 <br> - 결제 불가 상태에서는 명확한 오류를 반환한다 |
+
+
 
 ---
 
@@ -169,17 +185,19 @@
            |  - direction    |       |  - exchangeRate   |
            |  - balanceAfter |       |  - status (FSM)   |
            |  - transactionId|       |  - merchantId     |
-           +-----------------+       +-------------------+
+           +-----------------+       +---------+---------+
                                               |
-                                    +---------+---------+
-                                    |ExchangeTransaction|
-                                    |  (Aggregate Root) |
-                                    |                   |
-                                    |  - sourceCurrency |
-                                    |  - targetCurrency |
-                                    |  - exchangeRate   |
-                                    |  - rateSource     |
-                                    +-------------------+
+                        +---------------------+---------------------+
+                        |                                           |
+              +---------+---------+                       +---------+---------+
+              |      Merchant     |                       |ExchangeTransaction|
+              |  (Aggregate Root) |                       |  (Aggregate Root) |
+              |                   |                       |                   |
+              |  - name           |                       |  - sourceCurrency |
+              |  - callbackUrl    |                       |  - targetCurrency |
+              |  - status         |                       |  - exchangeRate   |
+              +-------------------+                       |  - rateSource     |
+                                                          +-------------------+
 ```
 
 ### 4.2 Aggregate 경계
@@ -237,6 +255,60 @@
 | US-E03 | FR-203 | NFR-301 | Sprint 3 |
 | US-M01 | FR-001, FR-401 | - | Sprint 1 |
 | US-M02 | FR-402 | NFR-202, NFR-204 | Sprint 1 |
+
+---
+
+## 6. MVP 확정 요건 (2026-04-25 추가)
+
+> 이 섹션은 MVP 개념 확정에 따라 추가된 요건이다.
+> 현재 구현 우선순위는 `Merchant`, `PaymentTransaction`, 페이머니 결제 흐름, 정산 개요까지로 한정한다.
+> 상세 설계는 `docs/07-payment-flow.md`, `docs/08-merchant-settlement.md`, `docs/extension/` 하위 문서를 참조한다.
+
+### 6.1 현재 MVP 본 요구사항
+
+| ID | 요구사항 | 수용 기준 (Acceptance Criteria) |
+|----|---------|-------------------------------|
+| FR-M01 | 시스템은 가맹점 정보를 등록하고 상태를 관리할 수 있어야 한다. | - Merchant 상태: ACTIVE / SUSPENDED / CLOSED <br> - ACTIVE 가맹점만 결제 요청 가능 <br> - API Key 발급 및 인증은 향후 확장 범위 |
+| FR-M02 | 시스템은 가맹점의 결제 요청을 수신하고 결제 세션을 생성해야 한다. | - `POST /api/v1/payments` 로 결제 요청 수신 <br> - 요청 항목: merchantId, amount, currency, orderId, callbackUrl <br> - 응답: paymentSessionId, redirectUrl (레몬페이 결제창 URL) |
+| FR-M03 | 시스템은 결제 완료 후 가맹점 callbackUrl로 결과를 전송해야 한다. | - Callback 전송 항목: paymentId, status, amount, currency, txNo, orderId <br> - HTTP POST 방식으로 전송 <br> - callback 재시도 및 실패 이력 관리 기능은 향후 확장 범위 |
+| FR-M04 | 시스템은 가맹점의 결제/정산 조회 기능을 확장할 수 있어야 한다. | - 결제 이력 조회 API 및 정산 이력 조회 API는 향후 확장 범위 |
+
+**신규 유저 스토리**:
+
+| ID | 유저 스토리 | 우선순위 |
+|----|-----------|---------|
+| US-MC01 | **가맹점**으로서, **레몬페이에 결제 요청을 보내고 결과를 webhook으로 받고** 싶다. **결제 처리를 자동화하기 위해서**이다. | Must |
+| US-CH01 | **회원**으로서, **레몬페이 페이머니를 충전**하고 싶다. **레몬페이로 결제하기 위해 잔액을 미리 채워두기 위해서**이다. | Must |
+| US-CH02 | **회원**으로서, **충전 후 즉시 변경된 잔액을 확인**하고 싶다. **충전이 정상적으로 처리되었는지 확인하기 위해서**이다. | Must |
+
+**추가 요구사항**:
+
+| ID | 요구사항 | 수용 기준 (Acceptance Criteria) |
+|----|---------|-------------------------------|
+| FR-CH01 | 시스템은 외부 결제 결과를 기반으로 페이머니를 충전해야 한다. | - 외부 결제 성공 시에만 페이머니 잔액 증가 <br> - 외부 결제 실패 시 페이머니 잔액 변동 없음 (원자성 보장) <br> - 기존 FR-004 충전 한도 동일 적용 (최소 1,000 KRW, 최대 10,000,000 KRW) |
+| FR-CH02 | 시스템은 충전 처리 시 외부 결제 참조 정보를 기록할 수 있어야 한다. | - 외부 결제 참조 ID 기록은 향후 확장 범위 <br> - 현재 MVP에서는 충전 원장 기록과 잔액 반영에 집중 |
+| FR-CH03 | 시스템은 페이머니 충전 완료 후 즉시 잔액에 반영되어야 한다. | - 충전 완료 응답에 `balanceAfter` (충전 후 잔액) 포함 <br> - 스냅샷 잔액(WalletBalance.balance)과 원장 항목 원자적으로 갱신 (기존 FR-003 동일) |
+
+| FR-ST01 | 시스템은 결제 완료 건을 가맹점 정산 대상으로 식별할 수 있어야 한다. | - `PaymentTransaction.status = COMPLETED` 인 결제 건만 정산 대상 <br> - 정산은 월말 배치 기준으로 집계 <br> - Settlement 상세 엔티티와 정산 조회 API는 향후 확장 범위 |
+
+---
+
+### 6.2 향후 확장 범위
+
+> 아래 항목은 `07-payment-flow.md` 기준 현재 MVP 본 구현 범위에서 제외한다.
+
+- 결제수단 관리 (`PaymentMethod`) 및 토큰화 API
+- 결제수단 등록/조회/삭제 요구사항 (`FR-P01~P03`, `US-PM01~03`)
+- 가맹점 API Key 발급 및 인증
+- 가맹점 결제/정산 이력 조회 API
+- 결제수단 토큰 기반 충전
+- 정산 상세 엔티티 및 정산 조회 API
+
+상세 초안은 아래 문서에서 관리한다.
+
+- `docs/extension/01-payment-method-design.md`
+- `docs/extension/02-merchant-api-design.md`
+- `docs/extension/03-payment-method-based-charge.md`
 
 ---
 
