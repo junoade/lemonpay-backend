@@ -57,6 +57,10 @@
 - `rate_source` — REALTIME / CACHED / FALLBACK. 사후 정산 및 감사 추적용
 - `source_amount`, `target_amount` — 각각 DECIMAL(18,4). 환전 전/후 금액
 
+### Merchant (가맹점)
+- PK: UUID (`BINARY(16)`) — 외부 노출 ID. 순서/수량 추론 방지
+- 논리 삭제: `status = CLOSED` (물리 삭제 없음)
+- `callbackUrl`  - 레몬페이 결제 결과를 전송할 가맹점 별 callbackUrl
 ---
 
 ## ERD
@@ -121,7 +125,7 @@ erDiagram
         decimal(18_8)  exchange_rate          "적용 환율"
         varchar(20)    status                 "PENDING | APPROVED | COMPLETED | FAILED | CANCELLED"
         varchar(64)    idempotency_key    UK  "중복 결제 방지"
-        varchar(64)    merchant_id            "가맹점 ID"
+        binary(16)     merchant_id            "Merchant.id 참조. 가맹점 ID"
         timestamp      created_at
         timestamp      updated_at
         timestamp      completed_at           "결제 완료 시각, nullable"
@@ -141,6 +145,15 @@ erDiagram
         timestamp      created_at
         timestamp      updated_at
     }
+    
+    Merchant {  
+        binary(16)    id           PK  "UUID, 외부 노출용"
+        varchar(100)  name             "가맹점 논리명"
+        varchar(5000) callbackUrl       "레몬페이 결제 결과를 전송할 가맹점 별 callbackUrl" 
+        varchar(20)   status            "ACTIVE|SUSPENDED|CLOSED"
+        timestamp      created_at
+        timestamp      updated_at
+    }
 
     %% Relationships
     Member          ||--o{ Wallet              : "has"
@@ -148,6 +161,7 @@ erDiagram
     Wallet          ||--o{ LedgerEntry         : "records"
     Wallet          ||--o{ PaymentTransaction  : "pays"
     Wallet          ||--o{ ExchangeTransaction : "exchanges"
+    Merchant        ||--o{ PaymentTransaction  : "receives"
 ```
 
 ---
