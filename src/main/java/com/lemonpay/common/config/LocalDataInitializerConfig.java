@@ -1,12 +1,13 @@
 package com.lemonpay.common.config;
 
 import com.lemonpay.common.domain.Money;
-import com.lemonpay.ledger.domain.Direction;
 import com.lemonpay.ledger.domain.EntryType;
 import com.lemonpay.ledger.domain.LedgerEntry;
 import com.lemonpay.ledger.domain.LedgerEntryRepository;
 import com.lemonpay.member.domain.Member;
 import com.lemonpay.member.domain.MemberRepository;
+import com.lemonpay.merchant.domain.Merchant;
+import com.lemonpay.merchant.domain.MerchantRepository;
 import com.lemonpay.wallet.domain.Wallet;
 import com.lemonpay.wallet.domain.WalletBalance;
 import com.lemonpay.wallet.domain.WalletBalanceRepository;
@@ -27,6 +28,7 @@ public class LocalDataInitializerConfig {
 
     private final MemberRepository memberRepository;
     private final WalletRepository walletRepository;
+    private final MerchantRepository merchantRepository;
     private final LedgerEntryRepository ledgerEntryRepository;
     private final WalletBalanceRepository walletBalanceRepository;
 
@@ -49,6 +51,8 @@ public class LocalDataInitializerConfig {
             String email = "test" + suffix + "@lemonpay.com";
             String name = "test" + suffix;
             String phone = "+82101234" + suffix;
+            String merchantName = "store" + suffix;
+            String callbackUrl = String.format("https://www.%s.com/payments/%s", merchantName,suffix);
 
             Member member = Member.create(email, name,phone);
             memberRepository.save(member);
@@ -59,6 +63,9 @@ public class LocalDataInitializerConfig {
             charge(wallet, Money.won(50_000));
             charge(wallet, Money.usd("1000.00"));
             charge(wallet, Money.jpy(1_000));
+
+            Merchant merchant = Merchant.create(merchantName, callbackUrl);
+            merchantRepository.save(merchant);
         }
     }
 
