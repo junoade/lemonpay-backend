@@ -166,7 +166,8 @@ class PaymentTransactionTest {
                 BigDecimal.valueOf(10_000),
                 Currency.KRW,
                 BigDecimal.valueOf(0),
-                "idempotency_key"
+                "idempotency_key",
+                "ORDER-20260518-TEST-001"
         );
     }
 }
