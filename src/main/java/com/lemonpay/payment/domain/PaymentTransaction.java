@@ -56,6 +56,9 @@ public class PaymentTransaction extends BaseEntity {
     @Column(name = "idempotency_key", nullable = false, updatable = false, length = 100)
     private String idempotencyKey; // 중복 결제 방지
 
+    @Column(name = "order_id", nullable = true, length = 100)
+    private String orderId;
+
     @Column(name = "wallet_id", columnDefinition = "BINARY(16)", nullable = false, updatable = false)
     private UUID walletId; // Wallet.id 참조. 지갑 ID
 
@@ -77,7 +80,8 @@ public class PaymentTransaction extends BaseEntity {
             BigDecimal settlementAmount,
             Currency settlementCurrency,
             BigDecimal exchangeRate,
-            String idempotencyKey
+            String idempotencyKey,
+            String orderId
     ) {
         this.txNo = txNo;
         this.walletId = walletId;
@@ -89,6 +93,7 @@ public class PaymentTransaction extends BaseEntity {
         this.exchangeRate = exchangeRate;
         this.idempotencyKey = idempotencyKey;
         this.status = PaymentStatus.PENDING;
+        this.orderId = orderId;
     }
 
     public static PaymentTransaction create(
@@ -100,7 +105,8 @@ public class PaymentTransaction extends BaseEntity {
             BigDecimal settlementAmount,
             Currency settlementCurrency,
             BigDecimal exchangeRate,
-            String idempotencyKey
+            String idempotencyKey,
+            String orderId
     ) {
         return new PaymentTransaction(
                 txNo,
@@ -111,7 +117,8 @@ public class PaymentTransaction extends BaseEntity {
                 settlementAmount,
                 settlementCurrency,
                 exchangeRate,
-                idempotencyKey
+                idempotencyKey,
+                orderId
         );
     }
 
