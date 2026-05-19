@@ -86,4 +86,15 @@ public class PaymentUseCase {
 
         return PaymentResult.of(tx, merchant.getName());
     }
+
+    @Transactional
+    public PaymentResult cancelPayment(PaymentCommand.Cancel command) {
+        var userId = UserContextHolder.getUserId();
+        PaymentTransaction tx = paymentTransactionService.getByTxNo(command.txNo());
+        tx.cancel();
+
+        walletService.validateWalletAccess(tx.getWalletId(), userId);
+        var merchant = merchantService.getMerchantById(tx.getMerchantId());
+        return PaymentResult.of(tx, merchant.getName());
+    }
 }

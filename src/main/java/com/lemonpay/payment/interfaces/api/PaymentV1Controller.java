@@ -31,7 +31,9 @@ public class PaymentV1Controller implements PaymentV1ApiSpec {
 
     @Override
     public ResponseEntity<PaymentDto.PaymentResponse> cancel(String txNo) {
-        return null;
+        var command = new PaymentCommand.Cancel(txNo);
+        var result = paymentUseCase.cancelPayment(command);
+        return ResponseEntity.ok(PaymentDto.PaymentResponse.from(result));
     }
 
     @Override
