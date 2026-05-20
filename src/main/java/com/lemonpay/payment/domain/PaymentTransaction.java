@@ -2,6 +2,7 @@ package com.lemonpay.payment.domain;
 
 import com.lemonpay.common.domain.BaseEntity;
 import com.lemonpay.common.domain.Currency;
+import com.lemonpay.common.domain.Money;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -137,5 +138,9 @@ public class PaymentTransaction extends BaseEntity {
     public void failed() {
         this.status.validateTransition(PaymentStatus.FAILED);
         this.status = PaymentStatus.FAILED;
+    }
+
+    public Money toPaymentMoney() {
+        return Money.of(amount, currency);
     }
 }

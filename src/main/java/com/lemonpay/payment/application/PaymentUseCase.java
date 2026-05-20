@@ -28,18 +28,20 @@ public class PaymentUseCase {
 
     @Transactional
     public PaymentResult createPendingPayment(PaymentCommand.Create command) {
-        merchantService.validateMerchantPayable(command.merchantId());
-        var merchant = merchantService.getMerchantById(command.merchantId());
-
-        walletService.validateWalletAccess(command.walletId(), UserContextHolder.getUserId());
+        var userId = UserContextHolder.getUserId();
+        walletService.validateWalletAccess(command.walletId(), userId);
+        var merchant = merchantService.getPayableMerchant(command.merchantId());
 
         String txNo = txNoGenerator.generate();
+        Money paymentAmount = Money.of(command.amount(), command.currency());
+        Money settlementAmount = Money.of(command.settlementAmount(), command.settlementCurrency());
+
         var result = paymentTransactionService.createPending(
                 txNo,
                 command.walletId(),
                 command.merchantId(),
-                Money.of(command.amount(), command.currency()),
-                Money.of(command.settlementAmount(), command.settlementCurrency()),
+                paymentAmount,
+                settlementAmount,
                 command.exchangeRate(),
                 command.idempotencyKey(),
                 command.orderId()
@@ -50,51 +52,51 @@ public class PaymentUseCase {
 
     @Transactional
     public PaymentResult approvePayment(PaymentCommand.Approve command) {
-        var userId = UserContextHolder.getUserId();
-
-        PaymentTransaction tx = paymentTransactionService.getByTxNo(command.txNo());
-
-        walletService.validateWalletAccess(tx.getWalletId(), userId);
-        merchantService.validateMerchantPayable(tx.getMerchantId());
-        var merchant = merchantService.getMerchantById(tx.getMerchantId());
-
+        PaymentTransaction tx = getOwnedPaymentTransaction(command.txNo());
+        var merchant = merchantService.getPayableMerchant(tx.getMerchantId());
         paymentTransactionService.validateCompletable(tx);
-        Money paymentAmount = Money.of(tx.getAmount(), tx.getCurrency());
-        WalletBalance balance = walletBalanceService.getWalletBalance(tx.getWalletId(), tx.getCurrency());
-
-        balance.decrease(paymentAmount);
-
-        LedgerEntry ledgerEntry = LedgerEntry.of(
-                tx.getWalletId(),
-                paymentAmount,
-                balance.toMoney(),
-                EntryType.PAYMENT
-        );
-        ledgerEntryRepository.save(ledgerEntry);
-
+        var balance = debitPaymentAmount(tx);
+        recordPaymentLedger(tx, balance);
         tx.complete();
         return PaymentResult.of(tx, merchant.getName());
     }
 
     @Transactional(readOnly = true)
     public PaymentResult getDetail(PaymentCommand.Query command) {
-        var userId = UserContextHolder.getUserId();
-
-        PaymentTransaction tx = paymentTransactionService.getByTxNo(command.txNo());
-        walletService.validateWalletAccess(tx.getWalletId(), userId);
+        PaymentTransaction tx = getOwnedPaymentTransaction(command.txNo());
         var merchant = merchantService.getMerchantById(tx.getMerchantId());
-
         return PaymentResult.of(tx, merchant.getName());
     }
 
     @Transactional
     public PaymentResult cancelPayment(PaymentCommand.Cancel command) {
-        var userId = UserContextHolder.getUserId();
-        PaymentTransaction tx = paymentTransactionService.getByTxNo(command.txNo());
+        PaymentTransaction tx = getOwnedPaymentTransaction(command.txNo());
         tx.cancel();
-
-        walletService.validateWalletAccess(tx.getWalletId(), userId);
         var merchant = merchantService.getMerchantById(tx.getMerchantId());
         return PaymentResult.of(tx, merchant.getName());
+    }
+
+    private PaymentTransaction getOwnedPaymentTransaction(String txNo) {
+        var userId = UserContextHolder.getUserId();
+        PaymentTransaction tx = paymentTransactionService.getByTxNo(txNo);
+        walletService.validateWalletAccess(tx.getWalletId(), userId);
+        return tx;
+    }
+
+    private WalletBalance debitPaymentAmount(PaymentTransaction tx) {
+        Money paymentAmount = tx.toPaymentMoney();
+        WalletBalance balance = walletBalanceService.getWalletBalance(tx.getWalletId(), tx.getCurrency());
+        balance.decrease(paymentAmount);
+        return balance;
+    }
+
+    private void recordPaymentLedger(PaymentTransaction tx, WalletBalance balance) {
+        LedgerEntry ledgerEntry = LedgerEntry.of(
+                tx.getWalletId(),
+                tx.toPaymentMoney(),
+                balance.toMoney(),
+                EntryType.PAYMENT
+        );
+        ledgerEntryRepository.save(ledgerEntry);
     }
 }
