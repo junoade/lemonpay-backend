@@ -6,6 +6,10 @@ import com.lemonpay.common.domain.Currency;
 import com.lemonpay.common.domain.Money;
 import com.lemonpay.common.exception.CoreException;
 import com.lemonpay.common.exception.ErrorType;
+import com.lemonpay.ledger.domain.EntryType;
+import com.lemonpay.ledger.domain.LedgerEntry;
+import com.lemonpay.ledger.domain.LedgerEntryRepository;
+import com.lemonpay.ledger.infrastructure.LedgerEntryJpaRepository;
 import com.lemonpay.member.domain.Member;
 import com.lemonpay.member.domain.MemberRepository;
 import com.lemonpay.merchant.domain.Merchant;
@@ -13,12 +17,17 @@ import com.lemonpay.merchant.domain.MerchantRepository;
 import com.lemonpay.payment.domain.PaymentStatus;
 import com.lemonpay.payment.domain.PaymentTransaction;
 import com.lemonpay.payment.domain.PaymentTransactionRepository;
+import com.lemonpay.wallet.application.ChargeUseCase;
 import com.lemonpay.wallet.domain.Wallet;
+import com.lemonpay.wallet.domain.WalletBalance;
+import com.lemonpay.wallet.domain.WalletBalanceService;
 import com.lemonpay.wallet.domain.WalletRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -39,17 +48,26 @@ class PaymentUseCaseIntegrationTest {
     @Autowired
     private WalletRepository walletRepository;
     @Autowired
+    private WalletBalanceService walletBalanceService;
+    @Autowired
     private MerchantRepository merchantRepository;
 
     @Autowired
     private PaymentUseCase paymentUseCase;
     @Autowired
     private PaymentTransactionRepository paymentTransactionRepository;
+    @Autowired
+    private ChargeUseCase chargeUseCase;
+
+    @Autowired
+    private LedgerEntryRepository ledgerEntryRepository;
 
     private Member member;
     private Wallet wallet;
     private Merchant merchant;
     private String today;
+    @Autowired
+    private LedgerEntryJpaRepository ledgerEntryJpaRepository;
 
     @BeforeEach
     void setUp() {
@@ -97,7 +115,7 @@ class PaymentUseCaseIntegrationTest {
         void createPayment_thenSuccess() {
             // given
             UserContextHolder.set(new UserContext(member.getId()));
-            var command = createKrwPaymentCommand();
+            var command = createDefaultKrwPaymentCommand();
 
             // when
             PaymentResult result = paymentUseCase.createPendingPayment(command);
@@ -128,7 +146,7 @@ class PaymentUseCaseIntegrationTest {
             // given
             UUID otherUserId = UUID.randomUUID();
             UserContextHolder.set(new UserContext(otherUserId));
-            var command = createKrwPaymentCommand();
+            var command = createDefaultKrwPaymentCommand();
             // when & then
             assertThatThrownBy(() -> paymentUseCase.createPendingPayment(command))
                     .isInstanceOf(CoreException.class)
@@ -142,7 +160,7 @@ class PaymentUseCaseIntegrationTest {
             // given
             UserContextHolder.set(new UserContext(member.getId()));
             merchant.close();
-            var command = createKrwPaymentCommand();
+            var command = createDefaultKrwPaymentCommand();
 
             // when & then
             assertThatThrownBy(() -> paymentUseCase.createPendingPayment(command))
@@ -150,35 +168,71 @@ class PaymentUseCaseIntegrationTest {
                     .extracting("errorType")
                     .isEqualTo(ErrorType.INVALID_REQUEST);
         }
-
-        private PaymentCommand.Create createKrwPaymentCommand() {
-            Currency purchasedCurrency = Currency.KRW;
-            Currency settlementCurrency = Currency.KRW;
-            Money purchaseAmount = Money.of(1000, purchasedCurrency);
-            Money settlementAmount = Money.of(1000, settlementCurrency);
-            BigDecimal exchangeRate = BigDecimal.ONE;
-            String orderId = today + "ORDER" + UUID.randomUUID();
-            String idempotencyKey = today + UUID.randomUUID();
-
-            return new PaymentCommand.Create(
-                    wallet.getId(),
-                    merchant.getId(),
-                    purchaseAmount.currency(),
-                    purchaseAmount.amount(),
-                    settlementAmount.currency(),
-                    settlementAmount.amount(),
-                    exchangeRate,
-                    orderId,
-                    idempotencyKey
-            );
-        }
     }
 
     @Nested
     @DisplayName("결제 승인 통합 테스트")
     class PaymentApprove {
-        // 결제 승인 테스트 정상
 
+        private PaymentResult pendingPayment;
+
+        @BeforeEach
+        void setUp() {
+            UserContextHolder.set(new UserContext(member.getId()));
+            pendingPayment = paymentUseCase.createPendingPayment(createDefaultKrwPaymentCommand());
+        }
+
+
+        // 결제 승인 테스트 정상
+        @Test
+        @DisplayName("PENDING 결제를 승인하면 COMPLETED 상태가 되고 잔액 차감과 원장 기록이 생성된다.")
+        void approvePayment_thenSuccess() {
+            // given
+            Currency givenCurrency = Currency.valueOf(pendingPayment.currency());
+            Money chargeMoney = Money.of(pendingPayment.amount(), givenCurrency);
+            chargeUseCase.charge(pendingPayment.walletId(), chargeMoney);
+            PaymentCommand.Approve command = new PaymentCommand.Approve(pendingPayment.txNo());
+            Money beforeBalance = walletBalanceService.getWalletBalance(pendingPayment.walletId(), givenCurrency)
+                    .toMoney();
+
+            // when
+            PaymentResult result = paymentUseCase.approvePayment(command);
+
+            // then
+            assertThat(result).isNotNull();
+            assertThat(result.txNo()).isNotBlank();
+            assertThat(result.txNo()).isNotBlank();
+            assertThat(result.status()).isEqualTo(PaymentStatus.COMPLETED.name());
+            assertThat(result.txNo()).startsWith(today);
+            assertThat(result.txNo()).hasSize(18);
+            // Money afterBalance = Money.of(result.amount(), givenCurrency);
+            // assertThat(afterBalance).isEqualTo(beforeBalance.subtract(chargeMoney));
+
+            PaymentTransaction tx = paymentTransactionRepository.findByTxNo(result.txNo()).orElseThrow();
+            assertThat(tx.getStatus()).isEqualTo(PaymentStatus.COMPLETED);
+            assertThat(tx.getWalletId()).isEqualTo(wallet.getId());
+            assertThat(tx.getMerchantId()).isEqualTo(merchant.getId());
+
+            assertThat(tx.getAmount()).isEqualByComparingTo(pendingPayment.amount());
+            assertThat(tx.getCurrency()).isEqualTo(Currency.valueOf(pendingPayment.currency()));
+            assertThat(tx.getSettlementAmount()).isEqualByComparingTo(pendingPayment.settlementAmount());
+            assertThat(tx.getSettlementCurrency()).isEqualTo(Currency.valueOf(pendingPayment.settlementCurrency()));
+            assertThat(tx.getExchangeRate()).isEqualTo(pendingPayment.exchangeRate());
+
+            Money afterBalance = walletBalanceService.getWalletBalance(pendingPayment.walletId(), givenCurrency)
+                    .toMoney();
+            assertThat(afterBalance).isEqualTo(beforeBalance.subtract(chargeMoney));
+
+            Page<LedgerEntry> paymentLedgers =
+                    ledgerEntryRepository.findByWalletIdAndCurrencyAndEntryTypeOrderByIdDesc(
+                            result.walletId(),
+                            givenCurrency,
+                            EntryType.PAYMENT,
+                            PageRequest.of(0, 10)
+                    );
+            assertThat(paymentLedgers.getContent()).hasSize(1);
+            assertThat(paymentLedgers.getContent().get(0).getAmount()).isEqualByComparingTo(chargeMoney.amount());
+        }
         // 결제 승인 테스트 - 결제생성건이 없을때
         // 결제 승인 테스트 - 이미 결제 처리가 되었을때
         // 결제 승인 테스트 예외) 지갑 소유주 다를 때
@@ -195,5 +249,28 @@ class PaymentUseCaseIntegrationTest {
     @DisplayName("결제 조회 통합 테스트")
     class PaymentView {
 
+    }
+
+
+    private PaymentCommand.Create createDefaultKrwPaymentCommand() {
+        Currency purchasedCurrency = Currency.KRW;
+        Currency settlementCurrency = Currency.KRW;
+        Money purchaseAmount = Money.of(1000, purchasedCurrency);
+        Money settlementAmount = Money.of(1000, settlementCurrency);
+        BigDecimal exchangeRate = BigDecimal.ONE;
+        String orderId = today + "ORDER" + UUID.randomUUID();
+        String idempotencyKey = today + UUID.randomUUID();
+
+        return new PaymentCommand.Create(
+                wallet.getId(),
+                merchant.getId(),
+                purchaseAmount.currency(),
+                purchaseAmount.amount(),
+                settlementAmount.currency(),
+                settlementAmount.amount(),
+                exchangeRate,
+                orderId,
+                idempotencyKey
+        );
     }
 }
