@@ -9,4 +9,5 @@ public interface MerchantRepository {
     Optional<Merchant> findById(UUID id);
     List<Merchant> findAll();
     boolean existsById(UUID id);
+    boolean existsByName(String name);
 }
