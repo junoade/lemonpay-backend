@@ -2,6 +2,7 @@ package com.lemonpay.merchant.domain;
 
 import com.lemonpay.common.exception.CoreException;
 import com.lemonpay.common.exception.ErrorType;
+import com.lemonpay.member.domain.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,8 +30,8 @@ public class MerchantService {
 
     @Transactional
     public Merchant register(Merchant merchant) {
-        if(merchantRepository.existsById(merchant.getId())) {
-            throw new CoreException(ErrorType.INVALID_REQUEST, "이미 등록된 가맹점입니다.");
+        if(merchantRepository.existsByName(merchant.getName())) {
+            throw new CoreException(ErrorType.INVALID_REQUEST, "이미 존재하는 가맹점입니다.");
         }
         return merchantRepository.save(merchant);
     }

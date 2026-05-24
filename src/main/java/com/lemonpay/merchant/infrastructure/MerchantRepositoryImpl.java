@@ -34,4 +34,9 @@ public class MerchantRepositoryImpl implements MerchantRepository {
     public boolean existsById(UUID id) {
         return jpaRepository.existsById(id);
     }
+
+    @Override
+    public boolean existsByName(String name) {
+        return jpaRepository.existsByName(name);
+    }
 }
