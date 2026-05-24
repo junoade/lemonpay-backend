@@ -1,5 +1,6 @@
 package com.lemonpay.config;
 
+import com.lemonpay.merchant.interfaces.MerchantV1Controller;
 import com.lemonpay.wallet.interfaces.api.WalletV1Controller;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -10,7 +11,6 @@ import io.swagger.v3.oas.models.parameters.Parameter;
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.method.HandlerMethod;
 
 @Configuration
@@ -55,6 +55,7 @@ public class OpenApiConfig {
      */
     private boolean requiresUserIdHeaderOnDocs(HandlerMethod handlerMethod) {
         Class<?> controllerType = handlerMethod.getBeanType();
-        return controllerType == WalletV1Controller.class;
+        return controllerType == WalletV1Controller.class
+                || controllerType == MerchantV1Controller.class;
     }
 }
