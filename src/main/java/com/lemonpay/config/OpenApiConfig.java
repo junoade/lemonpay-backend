@@ -57,7 +57,7 @@ public class OpenApiConfig {
     private boolean requiresUserIdHeaderOnDocs(HandlerMethod handlerMethod) {
         Class<?> controllerType = handlerMethod.getBeanType();
         return controllerType == WalletV1Controller.class
-                || controllerType == MerchantV1Controller.class
+                // || controllerType == MerchantV1Controller.class
                 || controllerType == PaymentV1Controller.class;
     }
 }
