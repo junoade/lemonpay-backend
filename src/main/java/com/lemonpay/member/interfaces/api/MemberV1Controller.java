@@ -2,8 +2,9 @@ package com.lemonpay.member.interfaces.api;
 
 
 import com.lemonpay.common.interfaces.ApiResponse;
-import com.lemonpay.member.domain.Member;
-import com.lemonpay.member.domain.MemberService;
+import com.lemonpay.member.application.MemberCommand;
+import com.lemonpay.member.application.MemberResult;
+import com.lemonpay.member.application.MemberUsecase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,19 +16,20 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class MemberV1Controller implements MemberV1ApiSpec {
 
-    private final MemberService memberService;
+    private final MemberUsecase memberUsecase;
 
     @Override
     public ResponseEntity<ApiResponse<MemberDto.MemberResponse>> create(MemberDto.CreationRequest request) {
-        Member member = memberService.joinMember(request.email(), request.name(), request.phone());
+        MemberCommand.Join command = request.toCommand();
+        MemberResult.CommonResult result = memberUsecase.join(command);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(ApiResponse.of(MemberDto.MemberResponse.from(member)));
+                .body(ApiResponse.of(MemberDto.MemberResponse.from(result)));
     }
 
     @Override
     public ResponseEntity<ApiResponse<MemberDto.MemberResponse>> login(MemberDto.LoginRequest request) {
-        Member member = memberService.validateAccess(request.email(), request.name());
-        return ResponseEntity.ok(ApiResponse.of(MemberDto.MemberResponse.from(member)));
+        MemberResult.CommonResult result = memberUsecase.login(request.email(), request.name());
+        return ResponseEntity.ok(ApiResponse.of(MemberDto.MemberResponse.from(result)));
     }
 }

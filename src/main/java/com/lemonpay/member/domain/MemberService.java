@@ -27,7 +27,7 @@ public class MemberService {
     }
 
     @Transactional
-    public Member joinMember(String email, String name, String phone) {
+    public Member createMember(String email, String name, String phone) {
         if (memberRepository.existsByEmail(email)) {
             throw new CoreException(ErrorType.INVALID_REQUEST, "이미 존재하는 회원정보입니다.");
         }

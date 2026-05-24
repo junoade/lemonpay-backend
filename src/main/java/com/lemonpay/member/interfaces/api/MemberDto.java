@@ -1,6 +1,7 @@
 package com.lemonpay.member.interfaces.api;
 
-import com.lemonpay.member.domain.Member;
+import com.lemonpay.member.application.MemberCommand;
+import com.lemonpay.member.application.MemberResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -15,8 +16,19 @@ public class MemberDto {
     public record CreationRequest(
             @NotBlank @Email String email,
             @NotBlank String name,
-            @NotBlank String phone
+            @NotBlank String phone,
+            @NotBlank String walletName,
+            @NotBlank String productCode
     ) {
+        public MemberCommand.Join toCommand() {
+            return new MemberCommand.Join(
+                    email,
+                    name,
+                    phone,
+                    walletName,
+                    productCode
+            );
+        }
     }
 
     public record LoginRequest(
@@ -38,21 +50,30 @@ public class MemberDto {
             String phone,
             @Schema(description = "회원 상태")
             String status,
+            @Schema(description = "지갑 UUID")
+            UUID walletId,
+            @Schema(description = "지갑 이름")
+            String walletName,
+            @Schema(description = "지갑 상품코드")
+            String productCode,
             @Schema(description = "회원 가입일자/시간")
             LocalDateTime createdAt,
             @Schema(description = "회원 정보 변경일자/시간")
             LocalDateTime updatedAt
     ) {
 
-        public static MemberResponse from(Member member) {
+        public static MemberResponse from(MemberResult.CommonResult result) {
             return new MemberResponse(
-                    member.getId(),
-                    member.getEmail(),
-                    member.getName(),
-                    member.getPhone(),
-                    member.getStatus().name(),
-                    member.getCreatedAt(),
-                    member.getUpdatedAt()
+                    result.memberId(),
+                    result.email(),
+                    result.name(),
+                    result.phone(),
+                    result.status(),
+                    result.walletId(),
+                    result.walletName(),
+                    result.walletProductCode(),
+                    result.createdAt(),
+                    result.updateAt()
             );
         }
     }
