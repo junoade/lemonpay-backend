@@ -48,5 +48,12 @@ public class MerchantService {
     public List<Merchant> getMerchants() {
         return merchantRepository.findAll();
     }
+  
+    @Transactional(readOnly = true)
+    public Merchant getPayableMerchant(UUID merchantId) {
+        Merchant merchant = getMerchantById(merchantId);
+        merchant.validatePayable();
+        return merchant;
+    }
 
 }
