@@ -26,6 +26,7 @@ public class WebConfig implements WebMvcConfigurer {
                         // 인증 불필요 API (로그인, 회원가입)
                         "/api/v1/members/login",
                         "/api/v1/members/join",
+                        "/api/v1/merchants/*",
                         // Swagger UI (dev/local 환경에서만 활성화되므로 인터셉터 제외)
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
