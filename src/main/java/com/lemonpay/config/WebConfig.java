@@ -24,7 +24,8 @@ public class WebConfig implements WebMvcConfigurer {
                 .addPathPatterns("/api/**")
                 .excludePathPatterns(
                         // 인증 불필요 API (로그인, 회원가입)
-                        "/api/v1/auth/**",
+                        "/api/v1/members/login",
+                        "/api/v1/members/join",
                         // Swagger UI (dev/local 환경에서만 활성화되므로 인터셉터 제외)
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
