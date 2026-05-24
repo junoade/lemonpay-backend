@@ -43,4 +43,11 @@ public class MerchantService {
         return merchantRepository.save(merchant);
     }
 
+    @Transactional(readOnly = true)
+    public Merchant getPayableMerchant(UUID merchantId) {
+        Merchant merchant = getMerchantById(merchantId);
+        merchant.validatePayable();
+        return merchant;
+    }
+
 }

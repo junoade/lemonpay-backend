@@ -1,0 +1,81 @@
+sequenceDiagram
+    actor Merchant as 가맹점 서버
+    actor Member as 사용자
+    participant PaymentAPI as Payment API/UseCase
+    participant MerchantDomain as Merchant
+    participant PaymentDomain as PaymentTransaction
+    participant Wallet as Wallet/WalletBalance
+    participant Ledger as LedgerEntry
+
+    %% client's action
+    Member ->> Merchant: 사용자가 특정 가맹점에서 간편결제 중 레몬페이 결제를 선택한다
+
+    %% server to server
+    Merchant ->>+ PaymentAPI: POST /api/v1/payments
+
+    PaymentAPI ->>+ Wallet: 지갑소유자 정보 확인
+    Wallet -->>- PaymentAPI: 지갑소유자 상이할 경우 예외발생
+    PaymentAPI ->>+ MerchantDomain: merchantId 조회 및 ACTIVE 검증
+    MerchantDomain -->>- PaymentAPI: Merchant 반환
+
+    PaymentAPI ->>+ PaymentDomain: PENDING 결제 생성
+    Note over PaymentDomain: status = PENDING
+    PaymentDomain -->>- PaymentAPI: 결제 정보 반환 반환
+
+    PaymentAPI -->>- Merchant: 결제 정보, redirectUrl 반환
+
+    %% client's action
+    Member ->>+ PaymentAPI : POST /api/v1/payments/{txNo}/approve
+
+    %% server
+    PaymentAPI ->>+ Wallet: 지갑소유자 정보 확인
+    Wallet -->>- PaymentAPI: 지갑소유자 상이할 경우 예외발생
+    PaymentAPI ->>+ PaymentDomain: txNo로 거래정보 조회
+    PaymentDomain -->>- PaymentAPI : PaymentTransaction 반환
+
+    PaymentAPI ->>+ MerchantDomain: merchantId 조회 및 ACTIVE 검증
+    MerchantDomain -->>- PaymentAPI: Merchant 반환
+
+    PaymentAPI ->>+ PaymentDomain: PENDING 상태 검증
+    PaymentDomain -->>- PaymentAPI: 상태 검증 / 실패시 예외 throws
+
+
+    PaymentAPI ->>+ Wallet: Wallet 잔액 재검증 및 차감
+    Wallet -->>- PaymentAPI: 정상 응답 / 실패시 예외 throws
+
+
+    PaymentAPI ->>+ Ledger: PAYMENT / DEBIT 원장 생성
+    Ledger -->>- PaymentAPI: 정상 응답 / 실패시 예외 throws
+
+    PaymentAPI ->>+ PaymentDomain : 결제 상태 COMPLETED 상태 전이
+    PaymentDomain -->>- PaymentAPI : 정상 응답 / 실패시 예외 throws
+
+    PaymentAPI -->>- Member : 결제 승인 결과 반환
+
+    %% client's action
+    Member ->>+ PaymentAPI: GET /api/v1/payments/{txNo}
+
+    PaymentAPI ->>+ Wallet: 지갑소유자 정보 확인
+    Wallet -->>- PaymentAPI: 지갑소유자 상이할 경우 예외발생
+    PaymentAPI ->>+ PaymentDomain : 결제 상세 조회
+    PaymentDomain -->>- PaymentAPI : 결제 상세 결과 응답
+
+    PaymentAPI ->>+ MerchantDomain: merchant 도메인 조회
+    MerchantDomain -->>- PaymentAPI: Merchant 도메인 객체 반환
+
+    PaymentAPI -->>- Member: 결제 상태/금액/가맹점/주문번호(PaymentResult) 반환
+
+    %% client's action
+    Member ->>+ PaymentAPI: POST /api/v1/payment/{txNo}/cancel
+
+    PaymentAPI ->>+ PaymentDomain : 결제 상세 조회
+    PaymentDomain -->>- PaymentAPI : 결제 상세 결과 응답
+
+    PaymentAPI ->>+ PaymentDomain : cancel() 결제 취소 요청
+    Note over PaymentDomain: PENDING -> CANCELLED
+    PaymentDomain -->>- PaymentAPI : 상태 변경 완료 / 정의되지 않은 상태일 경우 예외
+
+    PaymentAPI ->>+ MerchantDomain: merchant 도메인 조회
+    MerchantDomain -->>- PaymentAPI: Merchant 도메인 객체 반환
+
+    PaymentAPI -->>- Member: 결제 상태/금액/가맹점/주문번호(PaymentResult) 반환
