@@ -1,5 +1,6 @@
 package com.lemonpay.config;
 
+import com.lemonpay.merchant.interfaces.MerchantV1Controller;
 import com.lemonpay.payment.interfaces.api.PaymentV1Controller;
 import com.lemonpay.wallet.interfaces.api.WalletV1Controller;
 import io.swagger.v3.oas.models.Components;
@@ -56,6 +57,7 @@ public class OpenApiConfig {
     private boolean requiresUserIdHeaderOnDocs(HandlerMethod handlerMethod) {
         Class<?> controllerType = handlerMethod.getBeanType();
         return controllerType == WalletV1Controller.class
+                || controllerType == MerchantV1Controller.class
                 || controllerType == PaymentV1Controller.class;
     }
 }

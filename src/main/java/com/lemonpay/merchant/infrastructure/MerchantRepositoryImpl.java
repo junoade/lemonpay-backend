@@ -5,6 +5,7 @@ import com.lemonpay.merchant.domain.MerchantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -22,6 +23,11 @@ public class MerchantRepositoryImpl implements MerchantRepository {
     @Override
     public Optional<Merchant> findById(UUID id) {
         return jpaRepository.findById(id);
+    }
+
+    @Override
+    public List<Merchant> findAll() {
+        return jpaRepository.findAll();
     }
 
     @Override

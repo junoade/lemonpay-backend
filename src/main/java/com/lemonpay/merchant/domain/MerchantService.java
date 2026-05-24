@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -43,6 +44,11 @@ public class MerchantService {
         return merchantRepository.save(merchant);
     }
 
+    @Transactional(readOnly = true)
+    public List<Merchant> getMerchants() {
+        return merchantRepository.findAll();
+    }
+  
     @Transactional(readOnly = true)
     public Merchant getPayableMerchant(UUID merchantId) {
         Merchant merchant = getMerchantById(merchantId);
