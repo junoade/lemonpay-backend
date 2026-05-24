@@ -1,5 +1,6 @@
 package com.lemonpay.payment.interfaces.api;
 
+import com.lemonpay.common.interfaces.ApiResponse;
 import com.lemonpay.payment.application.PaymentCommand;
 import com.lemonpay.payment.application.PaymentUseCase;
 import lombok.RequiredArgsConstructor;
@@ -17,29 +18,37 @@ public class PaymentV1Controller implements PaymentV1ApiSpec {
     private final PaymentUseCase paymentUseCase;
 
     @Override
-    public ResponseEntity<PaymentDto.PaymentResponse> create(PaymentDto.CreationRequest request) {
+    public ResponseEntity<ApiResponse<PaymentDto.PaymentResponse>> create(PaymentDto.CreationRequest request) {
         var result = paymentUseCase.createPendingPayment(request.toCommand());
-        return ResponseEntity.ok(PaymentDto.PaymentResponse.from(result));
+        return ResponseEntity.ok(
+                ApiResponse.of(PaymentDto.PaymentResponse.from(result))
+        );
     }
 
     @Override
-    public ResponseEntity<PaymentDto.PaymentResponse> approve(String txNo) {
+    public ResponseEntity<ApiResponse<PaymentDto.PaymentResponse>> approve(String txNo) {
         var command = new PaymentCommand.Approve(txNo);
         var result = paymentUseCase.approvePayment(command);
-        return ResponseEntity.ok(PaymentDto.PaymentResponse.from(result));
+        return ResponseEntity.ok(
+                ApiResponse.of(PaymentDto.PaymentResponse.from(result))
+        );
     }
 
     @Override
-    public ResponseEntity<PaymentDto.PaymentResponse> cancel(String txNo) {
+    public ResponseEntity<ApiResponse<PaymentDto.PaymentResponse>> cancel(String txNo) {
         var command = new PaymentCommand.Cancel(txNo);
         var result = paymentUseCase.cancelPayment(command);
-        return ResponseEntity.ok(PaymentDto.PaymentResponse.from(result));
+        return ResponseEntity.ok(
+                ApiResponse.of(PaymentDto.PaymentResponse.from(result))
+        );
     }
 
     @Override
-    public ResponseEntity<PaymentDto.PaymentResponse> detail(String txNo) {
+    public ResponseEntity<ApiResponse<PaymentDto.PaymentResponse>> detail(String txNo) {
         var command = new PaymentCommand.Query(txNo);
         var result = paymentUseCase.getDetail(command);
-        return ResponseEntity.ok(PaymentDto.PaymentResponse.from(result));
+        return ResponseEntity.ok(
+                ApiResponse.of(PaymentDto.PaymentResponse.from(result))
+        );
     }
 }

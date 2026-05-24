@@ -2,6 +2,7 @@ package com.lemonpay.wallet.interfaces.api;
 
 import com.lemonpay.common.domain.Currency;
 import com.lemonpay.common.domain.Money;
+import com.lemonpay.common.interfaces.ApiResponse;
 import com.lemonpay.wallet.application.ChargeUseCase;
 import com.lemonpay.wallet.application.WalletQueryService;
 import lombok.RequiredArgsConstructor;
@@ -23,33 +24,33 @@ public class WalletV1Controller implements WalletV1ApiSpec {
     private final WalletQueryService walletQueryService;
 
     @Override
-    public ResponseEntity<WalletDto.ChargeResponse> charge(UUID walletId, WalletDto.ChargeRequest request) {
+    public ResponseEntity<ApiResponse<WalletDto.ChargeResponse>> charge(UUID walletId, WalletDto.ChargeRequest request) {
 
         Currency currency = Currency.valueOf(request.currency());
         Money money = Money.of(request.amount(), currency);
         var result = chargeUsecase.charge(walletId, money);
 
-        return ResponseEntity.ok(WalletDto.ChargeResponse.from(result));
+        return ResponseEntity.ok(ApiResponse.of(WalletDto.ChargeResponse.from(result)));
     }
 
     @Override
-    public ResponseEntity<WalletDto.BalancesResponse> getBalances(UUID walletId) {
+    public ResponseEntity<ApiResponse<WalletDto.BalancesResponse>> getBalances(UUID walletId) {
         var result = walletQueryService.getWalletBalances(walletId);
         return ResponseEntity.ok(
-                WalletDto.BalancesResponse.from(result)
+                ApiResponse.of(WalletDto.BalancesResponse.from(result))
         );
+
     }
 
     @Override
-    public ResponseEntity<WalletDto.HistoryResponse> getHistory(UUID walletId, String currency, Pageable pageable) {
-        log.warn("getHistory - walletId: {}, currency: {}, pageable: {}", walletId, currency, pageable);       Currency currencyEnum = null;
-
-        if(currency != null && !currency.isBlank()) {
+    public ResponseEntity<ApiResponse<WalletDto.HistoryResponse>> getHistory(UUID walletId, String currency, Pageable pageable) {
+        Currency currencyEnum = null;
+        if (currency != null && !currency.isBlank()) {
             currencyEnum = Currency.valueOf(currency);
         }
         var resultPage = walletQueryService.queryLedgerEntries(walletId, currencyEnum, pageable);
         return ResponseEntity.ok(
-                WalletDto.HistoryResponse.from(walletId, resultPage)
+                ApiResponse.of(WalletDto.HistoryResponse.from(walletId, resultPage))
         );
     }
 }
