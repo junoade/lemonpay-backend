@@ -1,0 +1,35 @@
+sequenceDiagram
+    actor C as Client/Scheduler
+    participant U as ExchangeRateSyncUseCase
+    participant P as ExchangeRateProvider
+    participant API as 외부 API
+    participant H as ExchangeRateHistoryRepository
+    participant M as ExchangeRateRepository
+
+    C ->>+ U: sync(baseCurrency, targetCurrency, rateDate)
+
+    U ->>+ P: fetch(baseCurrency, targetCurrency, rateDate)
+    P ->>+ API: HTTP API call
+    API -->>- P: HTTP response
+    P ->> P: ExchangeRateSnapshot 변환
+    P -->>- U: ExchangeRateSnapshot
+
+    U ->>+ M: findByCurrencyPair(baseCurrency, targetCurrency)
+    M -->>- U: Optional<ExchangeRate>
+
+    activate U
+    U ->> U: ExchangeRateHistory.official(snapshot)
+    alt currentRate exists
+        U ->> U: currentRate.update(snapshot)
+    else currentRate empty
+        U ->> U: ExchangeRate.create(snapshot)
+    end
+    deactivate U
+
+    U ->>+ H: save(history)
+    H -->>- U: savedHistory
+
+    U ->>+ M: save(exchangeRate)
+    M -->>- U: savedRate
+
+    U -->>- C: ExchangeRateSyncResult
