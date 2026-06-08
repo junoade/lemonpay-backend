@@ -76,10 +76,11 @@
 
 | ID | 요구사항 | 수용 기준 (Acceptance Criteria) |
 |----|---------|-------------------------------|
-| FR-201 | 시스템은 외부 API(exchangerate-api.com)에서 환율을 조회해야 한다. | - 설정 가능한 TTL로 환율 캐싱 (기본값: 10분) <br> - 외부 API 불가 시 만료된 캐시로 폴백(fallback) <br> - rate_source 기록: REALTIME, CACHED, 또는 FALLBACK |
+| FR-201 | 시스템은 외부 API(exchangerate-api.com)에서 환율을 조회해야 한다. | - 설정 가능한 TTL로 환율 캐싱 (기본값: 10분) <br> - 외부 API 불가 시 만료된 캐시 또는 DB 마지막 저장 환율로 폴백(fallback) <br> - 환율 출처와 가환율 여부는 `exchange_rate_history.source`, `exchange_rate_history.rate_type`으로 추적 |
 | FR-202 | 시스템은 환율 API에 **Circuit Breaker**를 구현해야 한다. | - Resilience4j CircuitBreaker 사용 <br> - 연속 5회 실패 후 CLOSED -> OPEN 전환 <br> - 30초 후 OPEN -> HALF_OPEN 전환 <br> - 성공 3회 후 HALF_OPEN -> CLOSED 전환 <br> - 폴백: 만료된 캐시 환율 또는 DB 마지막 저장 환율 반환 |
 | FR-203 | 시스템은 환전을 원자적(atomic) 연산으로 처리해야 한다. | - 단일 트랜잭션에서 두 개의 원장 항목 생성: <br>  (1) 출금 통화에 EXCHANGE_OUT (DEBIT) <br>  (2) 입금 통화에 EXCHANGE_IN (CREDIT) <br> - 두 항목은 동일한 transaction_id 공유 |
 | FR-204 | 시스템은 BigDecimal 연산으로 환전 금액을 계산해야 한다. | - 금융 계산에 부동소수점(double/float) 사용 금지 <br> - 반올림 모드: HALF_UP <br> - KRW: scale 0, USD: scale 2, JPY: scale 0 |
+| FR-205 | 시스템은 환율을 기준 환율로 저장하고, 거래 시점의 적용 환율은 거래 스냅샷으로 기록해야 한다. | - `exchange_rate.rate`는 `1 base_currency = N target_currency` 의미의 기준 환율로 저장 <br> - MVP에서는 전신환매입율/전신환매도율/현찰율 컬럼을 별도로 저장하지 않음 <br> - 환전 거래에는 실제 적용된 환율을 `exchange_transaction.exchange_rate`로 스냅샷 저장 <br> - 환전 거래는 사용한 기준 환율 이력을 `exchange_transaction.exchange_rate_history_id`로 참조 |
 
 ### 2.4 동시성 제어 (Concurrency Control)
 
@@ -324,7 +325,8 @@
 | **보상 (Compensation)** | 이전에 완료된 Saga 단계의 효과를 되돌리는 역연산. 예: 차감된 잔액 복원. |
 | **대사 (Reconciliation)** | 스냅샷 잔액과 원장 항목 합산 간의 정합성을 검증하는 정기 프로세스. |
 | **멱등성 키 (Idempotency Key)** | 클라이언트가 재시도하더라도 동일 연산이 중복 실행되지 않도록 보장하는 요청별 고유 식별자. |
-| **환율 출처 (Rate Source)** | 환율 획득 방식 표시: REALTIME(실시간 API), CACHED(TTL 이내 캐시), FALLBACK(만료 캐시/DB). |
+| **환율 출처 (Rate Source)** | 환율 획득 방식 표시: API(외부 API), MANUAL(수기 입력), DB_FALLBACK(DB 마지막 저장 환율). 가환율 여부는 `rate_type=PROVISIONAL`로 구분한다. |
+| **기준 환율 (Reference Rate)** | `exchange_rate.rate`에 저장되는 기준 환율. `1 base_currency = N target_currency`를 의미하며, MVP에서는 전신환매입율/전신환매도율/현찰율을 별도 저장하지 않는다. |
 
 ---
 
