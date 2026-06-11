@@ -1,6 +1,7 @@
 package com.lemonpay.exchange.domain;
 
 import com.lemonpay.common.domain.Currency;
+import com.lemonpay.common.domain.Money;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -123,6 +124,95 @@ class ExchangeRateTest {
             assertThat(exchangeRate.getRateType()).isEqualTo(ExchangeRateType.PROVISIONAL);
             assertThat(exchangeRate.getSource()).isEqualTo(ExchangeRateSource.DB_FALLBACK);
             assertThat(exchangeRate.getFetchedAt()).isEqualTo(nextFetchedAt);
+        }
+    }
+
+    @Nested
+    @DisplayName("환율 변환 테스트")
+    class Convert {
+
+        @Test
+        @DisplayName("USD/KRW 환율로 KRW를 USD로 변환한다.")
+        void convertKrwToUsd_success() {
+            // given
+            ExchangeRate usdKrwRate = ExchangeRate.create(
+                    Currency.USD,
+                    Currency.KRW,
+                    new BigDecimal("1350.00000000"),
+                    RATE_DATE,
+                    1,
+                    ExchangeRateType.OFFICIAL,
+                    ExchangeRateSource.API,
+                    FETCHED_AT
+            );
+            Money krw = Money.won(135_000);
+
+            // when
+            Money usd = usdKrwRate.convertTargetToBase(krw);
+
+            // then
+            assertThat(usd.currency()).isEqualTo(Currency.USD);
+            assertThat(usd.amount()).isEqualByComparingTo("100.00");
+        }
+
+        @Test
+        @DisplayName("JPY/KRW 환율로 KRW를 JPY로 변환한다.")
+        void convertKrwToJpy_success() {
+            // given
+            ExchangeRate jpyKrwRate = ExchangeRate.create(
+                    Currency.JPY,
+                    Currency.KRW,
+                    new BigDecimal("9.20000000"),
+                    RATE_DATE,
+                    1,
+                    ExchangeRateType.OFFICIAL,
+                    ExchangeRateSource.API,
+                    FETCHED_AT
+            );
+            Money krw = Money.won(9_200);
+
+            // when
+            Money jpy = jpyKrwRate.convertTargetToBase(krw);
+
+            // then
+            assertThat(jpy.currency()).isEqualTo(Currency.JPY);
+            assertThat(jpy.amount()).isEqualByComparingTo("1000");
+        }
+
+        @Test
+        @DisplayName("USD/KRW 환율로 USD를 KRW로 변환한다.")
+        void convertUsdToKrw_success() {
+            // given
+            ExchangeRate usdKrwRate = ExchangeRate.create(
+                    Currency.USD,
+                    Currency.KRW,
+                    new BigDecimal("1350.00000000"),
+                    RATE_DATE,
+                    1,
+                    ExchangeRateType.OFFICIAL,
+                    ExchangeRateSource.API,
+                    FETCHED_AT
+            );
+            Money usd = Money.usd("100.00");
+
+            // when
+            Money krw = usdKrwRate.convertBaseToTarget(usd);
+
+            // then
+            assertThat(krw.currency()).isEqualTo(Currency.KRW);
+            assertThat(krw.amount()).isEqualByComparingTo("135000");
+        }
+
+        @Test
+        @DisplayName("환율 대상 통화와 다른 금액은 역방향 변환할 수 없다.")
+        void convertTargetToBaseWithDifferentCurrency_throwsException() {
+            // given
+            ExchangeRate usdKrwRate = createUsdKrwRate();
+
+            // when & then
+            assertThatThrownBy(() -> usdKrwRate.convertTargetToBase(Money.usd("10.00")))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("대상 통화");
         }
     }
 

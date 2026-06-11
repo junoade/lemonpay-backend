@@ -2,6 +2,7 @@ package com.lemonpay.exchange.domain;
 
 import com.lemonpay.common.domain.BaseEntity;
 import com.lemonpay.common.domain.Currency;
+import com.lemonpay.common.domain.Money;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -118,6 +119,33 @@ public class ExchangeRate extends BaseEntity {
         this.rateType = Objects.requireNonNull(rateType, "환율 유형은 필수입니다.");
         this.source = Objects.requireNonNull(source, "환율 출처는 필수입니다.");
         this.fetchedAt = Objects.requireNonNull(fetchedAt, "환율 조회 시각은 필수입니다.");
+    }
+
+    public Money convertBaseToTarget(Money baseMoney) {
+        Objects.requireNonNull(baseMoney, "변환할 금액은 필수입니다.");
+        if (baseMoney.currency() != this.baseCurrency) {
+            throw new IllegalArgumentException(
+                    "환율 기준 통화와 금액 통화가 일치하지 않습니다: %s/%s"
+                            .formatted(this.baseCurrency, baseMoney.currency())
+            );
+        }
+
+        BigDecimal convertedAmount = baseMoney.amount().multiply(this.rate);
+        return Money.of(convertedAmount, this.targetCurrency);
+    }
+
+    public Money convertTargetToBase(Money targetMoney) {
+        Objects.requireNonNull(targetMoney, "변환할 금액은 필수입니다.");
+        if (targetMoney.currency() != this.targetCurrency) {
+            throw new IllegalArgumentException(
+                    "환율 대상 통화와 금액 통화가 일치하지 않습니다: %s/%s"
+                            .formatted(this.targetCurrency, targetMoney.currency())
+            );
+        }
+
+        BigDecimal convertedAmount = targetMoney.amount()
+                .divide(this.rate, RATE_SCALE, RoundingMode.HALF_UP);
+        return Money.of(convertedAmount, this.baseCurrency);
     }
 
     private static void validateCurrencyPair(Currency baseCurrency, Currency targetCurrency) {
