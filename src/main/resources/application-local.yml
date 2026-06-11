@@ -40,3 +40,11 @@ springdoc:
     path: /swagger-ui.html
     operations-sorter: method
     tags-sorter: alpha
+
+### 환율 fetch 설정 ###
+exchange:
+  rate:
+    provider: stub # stub | api
+  rate-api:
+    base-url: ${EXCHANGE_RATE_API_URL:https://v6.exchangerate-api.com}
+    api-key: ${EXCHANGE_RATE_API_KEY:}
