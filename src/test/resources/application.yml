@@ -1,0 +1,15 @@
+
+# test defaults: 테스트는 외부 API와 스케줄러에 의존하지 않습니다.
+exchange:
+  rate:
+    provider: stub
+    sync-ttl-minutes: 60
+    scheduler:
+      enabled: false
+      cron: "0 */10 * * * *"
+      pairs:
+        - USD/KRW
+        - JPY/KRW
+  rate-api:
+    base-url: ${EXCHANGE_RATE_API_URL:https://v6.exchangerate-api.com}
+    api-key: ${EXCHANGE_RATE_API_KEY:}

@@ -40,3 +40,13 @@ springdoc:
     path: /swagger-ui.html
     operations-sorter: method
     tags-sorter: alpha
+
+# local override: 로컬 개발에서는 자동 스케줄링을 비활성화합니다.
+exchange:
+  rate:
+    provider: ${EXCHANGE_RATE_PROVIDER:stub}
+    scheduler:
+      enabled: false
+  rate-api:
+    base-url: ${EXCHANGE_RATE_API_URL:https://v6.exchangerate-api.com}
+    api-key: ${EXCHANGE_RATE_API_KEY:}

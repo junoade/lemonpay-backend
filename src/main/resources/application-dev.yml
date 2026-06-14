@@ -25,3 +25,13 @@ springdoc:
     path: /swagger-ui.html
     operations-sorter: method
     tags-sorter: alpha
+
+# dev override: 개발 서버에서는 외부 API provider와 자동 스케줄링을 활성화합니다.
+exchange:
+  rate:
+    provider: ${EXCHANGE_RATE_PROVIDER:api} # stub | api
+    scheduler:
+      enabled: true
+  rate-api:
+    base-url: ${EXCHANGE_RATE_API_URL:https://v6.exchangerate-api.com}
+    api-key: ${EXCHANGE_RATE_API_KEY:}

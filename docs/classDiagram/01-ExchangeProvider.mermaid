@@ -1,0 +1,81 @@
+classDiagram
+    direction LR
+
+    namespace exchange_application {
+        class ExchangeRateProvider {
+            <<interface>>
+            +ExchangeRateSnapshot fetch()
+        }
+
+        class ExchangeRateSnapshot {
+            <<record>>
+        }
+    }
+
+    namespace exchange_infrastructure_provider_stub {
+        class StubExchangeRateProvider {
+            +ExchangeRateSnapshot fetch()
+        }
+    }
+
+    namespace exchange_infrastructure_provider_exchangeapi {
+        class ExchangeRateApiAdapter {
+            -RestClient exchangeRateRestClient
+            -ExchangeRateApiProperties properties
+            +ExchangeRateSnapshot fetch(Currency, Currency, LocalDate)
+            -ExchangeRateApiResponse requestLatestRates(Currency)
+            -void validateSuccess(ExchangeRateApiResponse)
+        }
+
+        class ExchangeRateApiConfig {
+            <<Config>>
+            +exchangeRateRestClient(builder, properties) RestClient
+        }
+
+        class ExchangeRateApiProperties {
+            <<ConfigurationProperties>>
+            -String baseUrl
+            -String apiKey
+            +boolean hasApiKey()
+        }
+
+        class ExchangeRateApiResponse {
+            <<external api dto>>
+            -String result
+            -String baseCode
+            -Map~String, BigDecimal~ conversionRates
+            -String errorType
+            +boolean isSuccess()
+            +Optional~BigDecimal~ rateOf(Currency)
+        }
+    }
+
+    namespace spring {
+        class RestClient {
+            <<Spring Bean>>
+        }
+    }
+
+    ExchangeRateProvider <|.. StubExchangeRateProvider : implements
+    ExchangeRateProvider <|.. ExchangeRateApiAdapter : implements
+
+    ExchangeRateApiConfig ..> ExchangeRateApiProperties : uses
+    ExchangeRateApiConfig ..> RestClient : creates
+
+    ExchangeRateApiAdapter --> RestClient : uses
+    ExchangeRateApiAdapter --> ExchangeRateApiProperties : uses
+    ExchangeRateApiAdapter ..> ExchangeRateApiResponse : maps response
+
+    ExchangeRateApiAdapter ..> ExchangeRateSnapshot : returns
+    StubExchangeRateProvider ..> ExchangeRateSnapshot : returns
+
+    %% note for ExchangeRateApiProperties "1. YAML exchange.rate-api.* 값이 바인딩된다."
+    %% note for ExchangeRateApiConfig "2. Properties 값을 사용해 RestClient Bean을 생성한다."
+    %% note for RestClient "3. Spring Container에 exchangeRateRestClient Bean으로 등록된다."
+    %% note for ExchangeRateApiAdapter "4. Adapter는 RestClient와 Properties를 주입받아 외부 API를 호출한다."
+    %% note for ExchangeRateApiResponse "exchangerate-api.com 응답 포맷에 종속된 infrastructure DTO. application/domain으로 노출하지 않는다."
+
+    %% package mapping
+    %% exchange_application = com.lemonpay.exchange.application
+    %% exchange_infrastructure_provider = com.lemonpay.exchange.infrastructure.provider
+    %% exchange_infrastructure_provider_exchangeapi = com.lemonpay.exchange.infrastructure.provider.exchangeapi

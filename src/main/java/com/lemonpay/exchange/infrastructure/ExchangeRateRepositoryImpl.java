@@ -6,6 +6,7 @@ import com.lemonpay.exchange.domain.ExchangeRateRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -22,5 +23,10 @@ public class ExchangeRateRepositoryImpl implements ExchangeRateRepository {
     @Override
     public Optional<ExchangeRate> findByCurrencyPair(Currency baseCurrency, Currency targetCurrency) {
         return jpaRepository.findByBaseCurrencyAndTargetCurrency(baseCurrency, targetCurrency);
+    }
+
+    @Override
+    public List<ExchangeRate> findAll() {
+        return jpaRepository.findAll();
     }
 }
