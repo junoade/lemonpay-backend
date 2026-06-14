@@ -27,6 +27,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/v1/members/login",
                         "/api/v1/members/join",
                         "/api/v1/merchants/**",
+                        "/api/v1/exchange-rates/**",
                         // Swagger UI (dev/local 환경에서만 활성화되므로 인터셉터 제외)
                         "/swagger-ui/**",
                         "/v3/api-docs/**",
