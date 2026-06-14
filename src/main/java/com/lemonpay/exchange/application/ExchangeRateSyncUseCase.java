@@ -5,7 +5,6 @@ import com.lemonpay.exchange.domain.ExchangeRate;
 import com.lemonpay.exchange.domain.ExchangeRateHistory;
 import com.lemonpay.exchange.domain.ExchangeRateHistoryRepository;
 import com.lemonpay.exchange.domain.ExchangeRateRepository;
-import com.lemonpay.exchange.infrastructure.config.ExchangeRateProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,14 +19,22 @@ public class ExchangeRateSyncUseCase {
     private final ExchangeRateProvider exchangeRateProvider;
     private final ExchangeRateRepository exchangeRateRepository;
     private final ExchangeRateHistoryRepository exchangeRateHistoryRepository;
-    private final ExchangeRateProperties exchangeRateProperties;
+    private final ExchangeRateSyncPolicy syncPolicy;
 
     @Transactional
     public ExchangeRateSnapshot syncExchangeRate(Currency baseCurrency, Currency targetCurrency) {
         LocalDate baseDate = LocalDate.now();
-        ExchangeRateSnapshot snapshot = exchangeRateProvider.fetch(baseCurrency, targetCurrency, baseDate);
+        ExchangeRateSnapshot fetchedSnapshot = exchangeRateProvider.fetch(baseCurrency, targetCurrency, baseDate);
 
+        int nextRoundNo = exchangeRateHistoryRepository
+                .findLatestOfficial(fetchedSnapshot.baseCurrency(), fetchedSnapshot.targetCurrency())
+                .filter(history -> history.getRateDate().isEqual(baseDate))
+                .map(history -> history.getRoundNo() + 1)
+                .orElse(1);
+
+        ExchangeRateSnapshot snapshot = fetchedSnapshot.withRoundNo(nextRoundNo);
         ExchangeRateHistory exchangeRateHistory = snapshot.toOfficialHistory();
+
         exchangeRateHistoryRepository.save(exchangeRateHistory);
         upsertExchangeRate(snapshot);
 
@@ -36,8 +43,9 @@ public class ExchangeRateSyncUseCase {
 
     @Transactional
     public ExchangeRateSyncResult syncIfStale(Currency baseCurrency, Currency targetCurrency) {
+        LocalDateTime now = LocalDateTime.now();
         return exchangeRateRepository.findByCurrencyPair(baseCurrency, targetCurrency)
-                .filter(this::isFresh)
+                .filter(rate -> syncPolicy.isFresh(rate, now))
                 .map(rate -> ExchangeRateSyncResult.skipped(
                         ExchangeRateSnapshot.from(rate),
                         "환율 정보가 TTL 이내로 skip 합니다."
@@ -63,10 +71,5 @@ public class ExchangeRateSyncUseCase {
                 ).orElseGet(snapshot::toExchangeRate);
 
         return exchangeRateRepository.save(exchangeRate);
-    }
-
-    private boolean isFresh(ExchangeRate rate) {
-        return rate.getFetchedAt()
-                .isAfter(LocalDateTime.now().minusMinutes(exchangeRateProperties.syncTtlMinutes()));
     }
 }

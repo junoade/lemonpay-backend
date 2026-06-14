@@ -45,6 +45,19 @@ public record ExchangeRateSnapshot(
         );
     }
 
+    public ExchangeRateSnapshot withRoundNo(int roundNo) {
+        return new ExchangeRateSnapshot(
+                baseCurrency,
+                targetCurrency,
+                rate,
+                rateDate,
+                roundNo,
+                rateType,
+                source,
+                fetchedAt
+        );
+    }
+
     public ExchangeRateHistory toOfficialHistory() {
         if (rateType != ExchangeRateType.OFFICIAL) {
             throw new IllegalStateException("공식 환율 스냅샷만 공식 환율 이력으로 변환할 수 있습니다.");
