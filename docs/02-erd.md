@@ -54,8 +54,31 @@
 - PK: BIGINT AUTO_INCREMENT — 내부 전용
 - `tx_no VARCHAR(20) UNIQUE` — 외부 노출용 거래일련번호. 형식: `{YYYYMMDD}{id:08d}`. 앱 레이어에서 생성
 - `exchange_rate DECIMAL(18,8)` — 환율은 소수점 8자리 필요
-- `rate_source` — REALTIME / CACHED / FALLBACK. 사후 정산 및 감사 추적용
+- `exchange_rate_history_id BIGINT` — 적용된 환율 이력 참조. 환율 출처와 가환율 원본 추적은 ExchangeRateHistory에서 확인
 - `source_amount`, `target_amount` — 각각 DECIMAL(18,4). 환전 전/후 금액
+
+### Merchant (가맹점)
+- PK: UUID (`BINARY(16)`) — 외부 노출 ID. 순서/수량 추론 방지
+- 논리 삭제: `status = CLOSED` (물리 삭제 없음)
+- `callbackUrl`  - 레몬페이 결제 결과를 전송할 가맹점 별 callbackUrl
+
+### ExchangeRate (환율 정보)
+
+- PK: BIGINT AUTO_INCREMENT — 내부 전용
+- `UNIQUE(base_currency, target_currency)` — 통화쌍별 현재 유효한 환율 1건 유지
+- `rate DECIMAL(18,8)` — `1 base_currency = N target_currency` 의미
+- `rate_date DATE` — 환율 기준일. 실제 API 수신 시각은 `fetched_at`으로 분리
+- `round_no SMALLINT` — 동일 기준일의 환율 회차
+- `rate_type` — OFFICIAL / PROVISIONAL. 공식 환율인지 가환율인지 구분
+- `source` — API / MANUAL / DB_FALLBACK. 환율 획득 경로
+
+### ExchangeRateHistory (환율 이력)
+
+- PK: BIGINT AUTO_INCREMENT — 내부 전용
+- `UNIQUE(base_currency, target_currency, rate_date, round_no, rate_type)` — 통화쌍/기준일/회차/유형별 이력 중복 방지
+- `rate DECIMAL(18,8)` — 해당 시점의 환율 스냅샷
+- `source_history_id BIGINT nullable` — 가환율 생성 시 기준이 된 원본 환율 이력 참조
+- INSERT ONLY — 환율 감사/대사를 위해 이력은 누적 저장
 
 ---
 
@@ -80,7 +103,7 @@ erDiagram
         varchar(100) name             "지갑 이름"
         boolean      is_primary       "주 지갑 여부 (default: true)"
         varchar(20)  product_code     "형식: {TYPE4}-V{VERSION} (예: BASC-V1)"
-        varchar(20)  status           "ACTIVE | FROZEN | SUSPENDED | CLOSED"
+        varchar(20)  status           "ACTIVE | FROZEN | CLOSED"
         timestamp    created_at
         timestamp    updated_at
     }
@@ -121,7 +144,7 @@ erDiagram
         decimal(18_8)  exchange_rate          "적용 환율"
         varchar(20)    status                 "PENDING | APPROVED | COMPLETED | FAILED | CANCELLED"
         varchar(64)    idempotency_key    UK  "중복 결제 방지"
-        varchar(64)    merchant_id            "가맹점 ID"
+        binary(16)     merchant_id            "Merchant.id 참조. 가맹점 ID"
         timestamp      created_at
         timestamp      updated_at
         timestamp      completed_at           "결제 완료 시각, nullable"
@@ -131,15 +154,52 @@ erDiagram
         bigint         id              PK  "AUTO_INCREMENT, 내부 전용"
         varchar(20)    tx_no           UK  "거래일련번호: YYYYMMDD+id (외부 노출)"
         binary(16)     wallet_id       FK  "Wallet.id 참조"
+        bigint         exchange_rate_history_id FK "적용 환율 이력 참조"
         varchar(3)     source_currency     "출금 통화"
         decimal(18_4)  source_amount       "출금 금액"
         varchar(3)     target_currency     "입금 통화"
         decimal(18_4)  target_amount       "입금 금액"
         decimal(18_8)  exchange_rate       "적용 환율 (소수점 8자리)"
-        varchar(20)    rate_source         "REALTIME | CACHED | FALLBACK"
         varchar(20)    status              "PENDING | COMPLETED | FAILED"
         timestamp      created_at
         timestamp      updated_at
+    }
+    
+    Merchant {  
+        binary(16)    id           PK  "UUID, 외부 노출용"
+        varchar(100)  name             "가맹점 논리명"
+        varchar(5000) callbackUrl       "레몬페이 결제 결과를 전송할 가맹점 별 callbackUrl" 
+        varchar(20)   status            "ACTIVE|SUSPENDED|CLOSED"
+        timestamp      created_at
+        timestamp      updated_at
+    }
+
+    exchange_rate {
+        bigint      id             PK  "내부 전용"
+        varchar(3)  base_currency
+        varchar(3)  target_currency
+        decimal(18_8) rate             "target_currency amount per 1 base_currency"
+        date rate_date
+        smallint round_no
+        varchar(20) rate_type         "OFFICIAL | PROVISIONAL"
+        varchar(20) source            "API | MANUAL | DB_FALLBACK"
+        timestamp fetched_at
+        timestamp created_at
+        timestamp updated_at
+    }
+  
+    exchange_rate_history {
+        bigint      id             PK  "내부 전용"
+        varchar(3)  base_currency
+        varchar(3) target_currency
+        decimal(18_8) rate             "target_currency amount per 1 base_currency"
+        date rate_date
+        smallint round_no
+        varchar(20) rate_type         "OFFICIAL | PROVISIONAL"
+        varchar(20) source            "API | MANUAL | DB_FALLBACK"
+        bigint      source_history_id "nullable, 가환율 원본 history id"
+        timestamp fetched_at
+        timestamp created_at
     }
 
     %% Relationships
@@ -148,6 +208,11 @@ erDiagram
     Wallet          ||--o{ LedgerEntry         : "records"
     Wallet          ||--o{ PaymentTransaction  : "pays"
     Wallet          ||--o{ ExchangeTransaction : "exchanges"
+    Merchant        ||--o{ PaymentTransaction  : "receives"
+    
+    exchange_rate ||--o{ exchange_rate_history : "has histories"
+    exchange_rate_history ||--o{ exchange_rate_history : "derived from"
+    exchange_rate_history ||--o{ ExchangeTransaction : "applied to"
 ```
 
 ---
@@ -168,6 +233,9 @@ erDiagram
 | `payment_transaction` | `(wallet_id, created_at DESC)` | 복합 | 지갑별 결제 내역 최신순 조회 | FR-005 |
 | `exchange_transaction` | `tx_no` | UNIQUE | 거래일련번호 외부 조회 | - |
 | `exchange_transaction` | `(wallet_id, created_at DESC)` | 복합 | 지갑별 환전 내역 최신순 조회 | FR-005 |
+| `exchange_rate` | `(base_currency, target_currency)` | UNIQUE | 통화쌍별 현재 적용 환율 단건 유지 | FR-201 |
+| `exchange_rate_history` | `(base_currency, target_currency, rate_date, round_no, rate_type)` | UNIQUE | 환율 이력 중복 저장 방지 | FR-201 |
+| `exchange_rate_history` | `(base_currency, target_currency, rate_date DESC)` | 복합 | 직전 공식 환율 및 최신 이력 조회 | FR-201 |
 
 ### 인덱스 설계 원칙
 

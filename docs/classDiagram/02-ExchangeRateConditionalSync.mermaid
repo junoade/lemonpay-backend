@@ -1,0 +1,100 @@
+classDiagram
+    direction LR
+
+    %% syncIfStale()
+    %%   -> master 조회
+    %%   -> isFresh() == true
+    %%       -> ExchangeRateSyncResult.skipped()
+    %%   -> 없거나 stale
+    %%       -> syncExchangeRate()
+    %%       -> provider fetch
+    %%       -> history save
+    %%       -> master upsert
+    %%       -> ExchangeRateSyncResult.synced()
+
+    namespace exchange_application {
+        class ExchangeRateSyncUseCase {
+            -ExchangeRateProvider exchangeRateProvider
+            -ExchangeRateRepository exchangeRateRepository
+            -ExchangeRateHistoryRepository exchangeRateHistoryRepository
+            -ExchangeRateProperties exchangeRateProperties
+            +syncExchangeRate(baseCurrency, targetCurrency) ExchangeRateSnapshot
+            +syncIfStale(baseCurrency, targetCurrency) ExchangeRateSyncResult
+            -upsertExchangeRate(snapshot) ExchangeRate
+            -isFresh(rate) boolean
+        }
+
+        class ExchangeRateProvider {
+            <<interface>>
+            +fetch(baseCurrency, targetCurrency, rateDate) ExchangeRateSnapshot
+        }
+
+        class ExchangeRateSnapshot {
+            +from(exchangeRate) ExchangeRateSnapshot
+            +toExchangeRate() ExchangeRate
+            +toOfficialHistory() ExchangeRateHistory
+        }
+
+        class ExchangeRateSyncResult {
+            -ExchangeRateSyncStatus status
+            -ExchangeRateSnapshot snapshot
+            -String reason
+            +synced(snapshot) ExchangeRateSyncResult
+            +skipped(snapshot, reason) ExchangeRateSyncResult
+        }
+
+        class ExchangeRateSyncStatus {
+            <<enumeration>>
+            SYNCED
+            SKIPPED
+        }
+    }
+
+    namespace exchange_domain {
+        class ExchangeRate {
+            +update(rate, rateDate, roundNo, rateType, source, fetchedAt)
+            +getFetchedAt() LocalDateTime
+        }
+
+        class ExchangeRateHistory {
+        }
+
+        class ExchangeRateRepository {
+            <<interface>>
+            +findByCurrencyPair(baseCurrency, targetCurrency) Optional~ExchangeRate~
+            +save(exchangeRate) ExchangeRate
+        }
+
+        class ExchangeRateHistoryRepository {
+            <<interface>>
+            +save(history) ExchangeRateHistory
+        }
+    }
+
+    namespace exchange_infrastructure_config {
+        class ExchangeRateProperties {
+            <<ConfigurationProperties>>
+            -String provider
+            -long syncTtlMinutes
+        }
+    }
+
+    ExchangeRateSyncUseCase --> ExchangeRateProvider : fetches when stale
+    ExchangeRateSyncUseCase --> ExchangeRateRepository : reads/upserts master
+    ExchangeRateSyncUseCase --> ExchangeRateHistoryRepository : appends history
+    ExchangeRateSyncUseCase --> ExchangeRateProperties : reads TTL
+    ExchangeRateSyncUseCase --> ExchangeRateSyncResult : returns
+    ExchangeRateSyncUseCase --> ExchangeRateSnapshot : creates/uses
+
+    ExchangeRateSyncResult --> ExchangeRateSyncStatus : has
+    ExchangeRateSyncResult --> ExchangeRateSnapshot : has
+
+    ExchangeRateSnapshot --> ExchangeRate : from/to
+    ExchangeRateSnapshot --> ExchangeRateHistory : toOfficialHistory
+
+    ExchangeRateRepository --> ExchangeRate : manages
+    ExchangeRateHistoryRepository --> ExchangeRateHistory : manages
+
+    %%
+
+    %%

@@ -1,0 +1,58 @@
+sequenceDiagram
+    actor C as Client
+    participant WC as WalletV1Controller
+    participant S as ChargeService
+    participant WS as WalletService
+    participant WBS as WalletBalanceService
+    participant WB as WalletBalance
+    participant L as LedgerEntryRepo
+
+    C ->> WC: 원화 충전 요청
+    activate WC
+        WC ->>S:  charge(walletId, KRW, money)
+        activate S
+            S ->> WS: getWallet(walletId)
+            activate WS
+                alt [wallet 존재]
+                    WS -->> S: wallet 반환
+                else [wallet 없음]
+                    WS -->> S: ERR wallet 없음
+                    S -->> WC: 예외 전파
+                    WC-->> C: HTTP 404 응답
+                end
+            deactivate WS
+
+            note over S: wallet 충전 가능 상태 검증
+            S ->> S: wallet.validateChargeable()
+
+
+            S ->> WBS: getWalletBalance(walletId, KRW)
+            activate WBS
+                alt [walletBalance 존재]
+                    WBS -->> S: walletBalance 반환
+                else [walletBalance 없음]
+                    WBS -->> S: ERR walletBalance 없음
+                    S -->> WC: 예외 전파
+                    WC -->> C: HTTP 404 응답
+                end
+            deactivate WBS
+
+            note over S: 충전 정책 확인 후 지갑 잔액 충전
+            S ->> S: validateKrwCharge(money)
+            S ->> WB: increase(money)
+            activate WB
+                WB  -->> S: 잔액 증가 완료
+            deactivate WB
+
+           note over S: 충전에 대한 원장 기록
+           S ->> S: LedgerEntry.of(walletId, money, balanceAfter, CHARGE)
+           S ->> L: 원장 기록
+           activate L
+                L-->>S: insert 완료
+           deactivate L
+
+           S -->> WC: ChargeResponse
+           deactivate S
+
+           WC -->> C: HTTP 200 OK
+           deactivate WC

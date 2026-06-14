@@ -1,3 +1,20 @@
 spring:
   application:
     name: lemonpay
+
+springdoc:
+  api-docs:
+    enabled: false
+
+### Exchange rate defaults ###
+exchange:
+  rate:
+    sync-ttl-minutes: 60
+    scheduler:
+      cron: "0 */10 * * * *"
+      pairs:
+        - USD/KRW
+        - JPY/KRW
+  rate-api:
+    base-url: ${EXCHANGE_RATE_API_URL}
+    api-key: ${EXCHANGE_RATE_API_KEY}

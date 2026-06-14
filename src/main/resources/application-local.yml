@@ -1,9 +1,52 @@
+server:
+  port: 8081
+
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;MODE=MySQL
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1
     driver-class-name: org.h2.Driver
     username: sa
     password:
+  h2:
+    console:
+      ## 검증(dev) / 운영(main)에선 주의
+      enabled: true
+      path: /h2-console
   jpa:
     hibernate:
-      ddl-auto: update
+      ## 검증(dev) / 운영(main)에선 주의
+      ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate:
+        ## 검증(dev) / 운영(main)에선 주의
+        format_sql: true
+        highlight_sql: true
+        use_sql_comments: true
+        generate_statistics: true
+
+logging:
+  level:
+    ## 검증(dev) / 운영(main)에선 주의
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+    org.hibernate.stat: debug
+
+springdoc:
+  use-fqn: true
+  api-docs:
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+
+# local override: 로컬 개발에서는 자동 스케줄링을 비활성화합니다.
+exchange:
+  rate:
+    provider: ${EXCHANGE_RATE_PROVIDER:stub}
+    scheduler:
+      enabled: false
+  rate-api:
+    base-url: ${EXCHANGE_RATE_API_URL:https://v6.exchangerate-api.com}
+    api-key: ${EXCHANGE_RATE_API_KEY:}
