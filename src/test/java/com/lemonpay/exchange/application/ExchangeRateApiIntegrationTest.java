@@ -9,13 +9,20 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
 
 @ActiveProfiles("local")
 @SpringBootTest(properties = {
-        "exchange.rate.provider=api"
+        "exchange.rate.provider=api",
+        "exchange.rate.sync-ttl-minutes=60",
+        "exchange.rate.scheduler.enabled=false"
 })
 @Transactional
 public class ExchangeRateApiIntegrationTest {
@@ -30,6 +37,9 @@ public class ExchangeRateApiIntegrationTest {
     private ExchangeRateHistoryRepository exchangeRateHistoryRepository;
     @Autowired
     private ExchangeRateApiProperties exchangeRateApiProperties;
+
+    @MockitoSpyBean
+    private ExchangeRateProvider exchangeRateProvider;
 
 
     @Test
@@ -62,6 +72,26 @@ public class ExchangeRateApiIntegrationTest {
         assertThat(history.getRate()).isEqualByComparingTo(snapshot.rate());
         assertThat(history.getRateType()).isEqualTo(ExchangeRateType.OFFICIAL);
         assertThat(history.getSource()).isEqualTo(ExchangeRateSource.API);
+    }
+
+    @Test
+    @DisplayName("저장된 환율이 TTL 이내면 실제 API를 다시 호출하지 않고 동기화를 skip한다.")
+    void syncIfStale_whenFreshRateExists_skipApiCall() {
+        // skip
+        Assumptions.assumeTrue(exchangeRateApiProperties.hasApiKey(),
+                "외부API_exchangerate-api.com 에 대한 API_KEY가 없어 통합테스트 스킵합니다.");
+
+        // given
+        ExchangeRateSnapshot synced = useCase.syncExchangeRate(Currency.USD, Currency.KRW);
+        reset(exchangeRateProvider);
+
+        // when
+        ExchangeRateSyncResult result = useCase.syncIfStale(Currency.USD, Currency.KRW);
+
+        // then
+        assertThat(result.status()).isEqualTo(ExchangeRateSyncStatus.SKIPPED);
+        assertThat(result.snapshot().rate()).isEqualByComparingTo(synced.rate());
+        verify(exchangeRateProvider, never()).fetch(any(), any(), any());
     }
 
 }
