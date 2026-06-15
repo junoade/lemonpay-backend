@@ -12,6 +12,16 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQLDialect
 
+### dev override: 운영 유사 모니터링 검증을 위해 Prometheus endpoint를 노출 ###
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+
 logging:
   level:
     org.hibernate.SQL: debug

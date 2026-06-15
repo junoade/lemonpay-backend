@@ -25,6 +25,17 @@ spring:
         use_sql_comments: true
         generate_statistics: true
 
+### local override: 개발 편의를 위해 Actuator 상세 health와 metrics endpoint를 노출 ###
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+
 logging:
   level:
     ## 검증(dev) / 운영(main)에선 주의

@@ -2,6 +2,20 @@ spring:
   application:
     name: lemonpay
 
+### Do not expose env/configprops/heapdump on public networks. ###
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  endpoint:
+    health:
+      show-details: never
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
 springdoc:
   api-docs:
     enabled: false
