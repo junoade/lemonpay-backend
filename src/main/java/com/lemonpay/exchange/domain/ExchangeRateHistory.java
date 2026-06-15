@@ -143,6 +143,29 @@ public class ExchangeRateHistory {
         );
     }
 
+    public static ExchangeRateHistory fallback(
+            Currency baseCurrency,
+            Currency targetCurrency,
+            BigDecimal rate,
+            LocalDate rateDate,
+            int roundNo,
+            Long sourceHistoryId,
+            LocalDateTime fetchedAt
+    ) {
+        Objects.requireNonNull(sourceHistoryId, "원본 공식 환율 이력 ID는 필수입니다.");
+        return new ExchangeRateHistory(
+                baseCurrency,
+                targetCurrency,
+                rate,
+                rateDate,
+                roundNo,
+                ExchangeRateType.FALLBACK,
+                ExchangeRateSource.DB_FALLBACK,
+                sourceHistoryId,
+                fetchedAt
+        );
+    }
+
     private static void validateCurrencyPair(Currency baseCurrency, Currency targetCurrency) {
         Objects.requireNonNull(baseCurrency, "기준 통화는 필수입니다.");
         Objects.requireNonNull(targetCurrency, "대상 통화는 필수입니다.");

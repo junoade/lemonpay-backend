@@ -4,9 +4,11 @@ import com.lemonpay.common.domain.Currency;
 import com.lemonpay.common.exception.CoreException;
 import com.lemonpay.common.exception.ErrorType;
 import com.lemonpay.exchange.application.ExchangeRateProvider;
+import com.lemonpay.exchange.application.ExchangeRateProviderException;
 import com.lemonpay.exchange.application.ExchangeRateSnapshot;
 import com.lemonpay.exchange.domain.ExchangeRateSource;
 import com.lemonpay.exchange.domain.ExchangeRateType;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -28,6 +30,7 @@ public class ExchangeRateApiAdapter implements ExchangeRateProvider {
     private final RestClient exchangeRateRestClient;
     private final ExchangeRateApiProperties properties;
 
+    @CircuitBreaker(name = "exchangeRateApi", fallbackMethod = "fallbackProviderFailure")
     @Override
     public ExchangeRateSnapshot fetch(Currency baseCurrency, Currency targetCurrency, LocalDate rateDate) {
         if (!properties.hasApiKey()) {
@@ -62,10 +65,7 @@ public class ExchangeRateApiAdapter implements ExchangeRateProvider {
                     .retrieve()
                     .body(ExchangeRateApiResponse.class);
         } catch (RestClientException e) {
-            throw new CoreException(
-                    ErrorType.INTERNAL_SERVER_ERROR,
-                    "외부 환율 API 호출에 실패했습니다."
-            );
+            throw new ExchangeRateProviderException("외부 환율 API 호출에 실패했습니다.");
         }
     }
 
@@ -80,5 +80,20 @@ public class ExchangeRateApiAdapter implements ExchangeRateProvider {
                     "환율 API 오류 응답: %s".formatted(response.errorType())
             );
         }
+    }
+
+    private ExchangeRateSnapshot fallbackProviderFailure(Currency baseCurrency,
+                                                         Currency targetCurrency,
+                                                         LocalDate rateDate,
+                                                         Throwable throwable) {
+        if(throwable instanceof CoreException e) {
+            throw e;
+        }
+
+        if(throwable instanceof ExchangeRateProviderException e) {
+            throw e;
+        }
+        // CallNotPermittedException 등의 예외를 provider 예외로 변환.
+        throw new ExchangeRateProviderException("환율 Provider 호출에 실패했습니다 : ", throwable);
     }
 }

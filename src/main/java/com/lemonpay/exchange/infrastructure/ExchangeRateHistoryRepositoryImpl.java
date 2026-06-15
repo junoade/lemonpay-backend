@@ -7,6 +7,7 @@ import com.lemonpay.exchange.domain.ExchangeRateType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 @Component
@@ -31,6 +32,19 @@ public class ExchangeRateHistoryRepositoryImpl implements ExchangeRateHistoryRep
                 baseCurrency,
                 targetCurrency,
                 ExchangeRateType.OFFICIAL
+        );
+    }
+
+    @Override
+    public Optional<ExchangeRateHistory> findLatestByCurrencyPairAndRateDate(
+            Currency baseCurrency,
+            Currency targetCurrency,
+            LocalDate rateDate
+    ) {
+        return jpaRepository.findFirstByBaseCurrencyAndTargetCurrencyAndRateDateOrderByRoundNoDesc(
+                baseCurrency,
+                targetCurrency,
+                rateDate
         );
     }
 }

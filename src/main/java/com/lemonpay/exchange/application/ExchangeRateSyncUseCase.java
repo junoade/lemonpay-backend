@@ -18,27 +18,26 @@ public class ExchangeRateSyncUseCase {
 
     private final ExchangeRateProvider exchangeRateProvider;
     private final ExchangeRateRepository exchangeRateRepository;
-    private final ExchangeRateHistoryRepository exchangeRateHistoryRepository;
+    private final ExchangeRateHistoryAppender exchangeRateHistoryAppender;
     private final ExchangeRateSyncPolicy syncPolicy;
+    private final ExchangeRateHistoryRepository exchangeRateHistoryRepository;
 
     @Transactional
     public ExchangeRateSnapshot syncExchangeRate(Currency baseCurrency, Currency targetCurrency) {
         LocalDate baseDate = LocalDate.now();
-        ExchangeRateSnapshot fetchedSnapshot = exchangeRateProvider.fetch(baseCurrency, targetCurrency, baseDate);
 
-        int nextRoundNo = exchangeRateHistoryRepository
-                .findLatestOfficial(fetchedSnapshot.baseCurrency(), fetchedSnapshot.targetCurrency())
-                .filter(history -> history.getRateDate().isEqual(baseDate))
-                .map(history -> history.getRoundNo() + 1)
-                .orElse(1);
+        try {
+            ExchangeRateSnapshot fetchedSnapshot = exchangeRateProvider.fetch(baseCurrency, targetCurrency, baseDate);
 
-        ExchangeRateSnapshot snapshot = fetchedSnapshot.withRoundNo(nextRoundNo);
-        ExchangeRateHistory exchangeRateHistory = snapshot.toOfficialHistory();
-
-        exchangeRateHistoryRepository.save(exchangeRateHistory);
-        upsertExchangeRate(snapshot);
-
-        return snapshot;
+            ExchangeRateHistory savedHistory = exchangeRateHistoryAppender.appendOfficial(fetchedSnapshot);
+            return upsertMasterAndReturn(savedHistory);
+        } catch (ExchangeRateProviderException e) {
+            ExchangeRateHistory sourceOfficialHistory = exchangeRateHistoryRepository
+                    .findLatestOfficial(baseCurrency, targetCurrency)
+                    .orElseThrow(() -> e);
+            ExchangeRateHistory savedHistory = exchangeRateHistoryAppender.appendDbFallback(sourceOfficialHistory);
+            return upsertMasterAndReturn(savedHistory);
+        }
     }
 
     @Transactional
@@ -53,6 +52,12 @@ public class ExchangeRateSyncUseCase {
                 .orElseGet(() -> ExchangeRateSyncResult.synced(
                         syncExchangeRate(baseCurrency, targetCurrency)
                 ));
+    }
+
+    private ExchangeRateSnapshot upsertMasterAndReturn(ExchangeRateHistory history) {
+        ExchangeRateSnapshot snapshot = ExchangeRateSnapshot.from(history);
+        upsertExchangeRate(snapshot);
+        return snapshot;
     }
 
     private ExchangeRate upsertExchangeRate(ExchangeRateSnapshot snapshot) {

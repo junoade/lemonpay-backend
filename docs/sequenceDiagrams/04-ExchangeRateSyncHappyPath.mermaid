@@ -1,0 +1,37 @@
+sequenceDiagram
+    actor C as Client/Scheduler
+    participant U as ExchangeRateSyncUseCase
+    participant CB as CircuitBreaker Proxy
+    participant A as ExchangeRateApiAdapter
+    participant API as 외부 API
+    participant APP as ExchangeRateHistoryAppender
+    participant M as ExchangeRateRepository
+
+    C ->> U: syncExchangeRate(baseCurrency, targetCurrency)
+    U ->> U: baseDate = LocalDate.now()
+
+    U ->> CB: exchangeRateProvider.fetch(base, target, baseDate)
+    CB ->> A: fetch(base, target, baseDate)
+    A ->> API: HTTP API call
+    API -->> A: HTTP response
+    A ->> A: ExchangeRateSnapshot 변환(source=API)
+    A -->> CB: API snapshot
+    CB -->> U: API snapshot
+
+    U ->> APP: appendOfficial(apiSnapshot)
+    Note over APP: 같은 통화쌍/기준일의 최신 이력 기준으로 nextRoundNo 계산
+    APP -->> U: savedOfficialHistory
+
+    U ->> U: ExchangeRateSnapshot.from(savedOfficialHistory)
+    U ->> M: findByCurrencyPair(base, target)
+    M -->> U: Optional<ExchangeRate>
+
+    alt currentRate exists
+        U ->> U: currentRate.update(snapshot)
+    else currentRate empty
+        U ->> U: ExchangeRate.create(snapshot)
+    end
+
+    U ->> M: save(exchangeRate)
+    M -->> U: savedRate
+    U -->> C: ExchangeRateSnapshot(source=API)
