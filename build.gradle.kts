@@ -21,9 +21,15 @@ repositories {
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-actuator")
+	implementation("org.springframework.boot:spring-boot-starter-aop")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("io.micrometer:micrometer-registry-prometheus")
+
+	// resilience4j
+	implementation("io.github.resilience4j:resilience4j-spring-boot3:${project.properties["resilience4jVersion"]}")
+	implementation("io.github.resilience4j:resilience4j-micrometer:${project.properties["resilience4jVersion"]}")
+
 	implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${project.properties["springDocOpenApiVersion"]}")
 
 	runtimeOnly("com.h2database:h2")
