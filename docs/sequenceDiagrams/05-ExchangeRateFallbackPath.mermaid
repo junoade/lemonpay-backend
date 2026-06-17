@@ -1,0 +1,52 @@
+sequenceDiagram
+    actor C as Client/Scheduler
+    participant U as ExchangeRateSyncUseCase
+    participant CB as CircuitBreaker Proxy
+    participant A as ExchangeRateApiAdapter
+    participant API as 외부 API
+    participant APP as ExchangeRateHistoryAppender
+    participant H as ExchangeRateHistoryRepository
+    participant M as ExchangeRateRepository
+
+    C ->> U: syncExchangeRate(baseCurrency, targetCurrency)
+    U ->> CB: exchangeRateProvider.fetch(base, target, baseDate)
+
+    alt CircuitBreaker CLOSED/HALF_OPEN and API failure
+        CB ->> A: fetch(base, target, baseDate)
+        A ->> API: HTTP API call
+        API -->> A: error/timeout
+        A ->> A: RestClientException -> ExchangeRateProviderException
+        A -->> CB: ExchangeRateProviderException
+        CB ->> A: fallbackProviderFailure(..., throwable)
+        A -->> CB: ExchangeRateProviderException
+        CB -->> U: ExchangeRateProviderException
+    else CircuitBreaker OPEN
+        CB ->> A: fallbackProviderFailure(..., CallNotPermittedException)
+        A -->> CB: ExchangeRateProviderException
+        CB -->> U: ExchangeRateProviderException
+    end
+
+    U ->> H: findLatestOfficial(base, target)
+    H -->> U: sourceOfficialHistory
+
+    alt sourceOfficialHistory exists
+        U ->> APP: appendDbFallback(sourceOfficialHistory)
+        Note over APP: source official history 기준으로 DB_FALLBACK 이력 생성
+        APP -->> U: savedFallbackHistory
+
+        U ->> U: ExchangeRateSnapshot.from(savedFallbackHistory)
+        U ->> M: findByCurrencyPair(base, target)
+        M -->> U: Optional<ExchangeRate>
+
+        alt currentRate exists
+            U ->> U: currentRate.update(fallbackSnapshot)
+        else currentRate empty
+            U ->> U: ExchangeRate.create(fallbackSnapshot)
+        end
+
+        U ->> M: save(exchangeRate)
+        M -->> U: savedRate
+        U -->> C: ExchangeRateSnapshot(source=DB_FALLBACK)
+    else sourceOfficialHistory empty
+        U -->> C: ExchangeRateProviderException
+    end

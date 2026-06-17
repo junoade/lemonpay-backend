@@ -5,6 +5,7 @@ import com.lemonpay.exchange.domain.ExchangeRateHistory;
 import com.lemonpay.exchange.domain.ExchangeRateType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 public interface ExchangeRateHistoryJpaRepository extends JpaRepository<ExchangeRateHistory, Long> {
@@ -13,5 +14,11 @@ public interface ExchangeRateHistoryJpaRepository extends JpaRepository<Exchange
             Currency baseCurrency,
             Currency targetCurrency,
             ExchangeRateType rateType
+    );
+
+    Optional<ExchangeRateHistory> findFirstByBaseCurrencyAndTargetCurrencyAndRateDateOrderByRoundNoDesc(
+            Currency baseCurrency,
+            Currency targetCurrency,
+            LocalDate rateDate
     );
 }

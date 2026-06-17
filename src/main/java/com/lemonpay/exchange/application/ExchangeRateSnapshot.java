@@ -86,4 +86,17 @@ public record ExchangeRateSnapshot(
                 exchangeRate.getFetchedAt()
         );
     }
+
+    public static ExchangeRateSnapshot from(ExchangeRateHistory history) {
+        return new ExchangeRateSnapshot(
+                history.getBaseCurrency(),
+                history.getTargetCurrency(),
+                history.getRate(),
+                history.getRateDate(),
+                history.getRoundNo(),
+                history.getRateType(),
+                history.getSource(),
+                history.getFetchedAt()
+        );
+    }
 }
