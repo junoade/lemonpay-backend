@@ -2,7 +2,7 @@ spring:
   application:
     name: lemonpay
 
-### Do not expose env/configprops/heapdump on public networks. ###
+### Do not expose env/configprops/heapdump/circuitbreakers on public networks. ###
 management:
   endpoints:
     web:
@@ -15,6 +15,21 @@ management:
     metrics:
       export:
         enabled: true
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      exchangeRateApi:
+        sliding-window-type: count_based
+        sliding-window-size: 5
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 2
+        recordExceptions:
+          - com.lemonpay.exchange.application.ExchangeRateProviderException
+        ignore-exceptions:
+          - com.lemonpay.common.exception.CoreException
 
 springdoc:
   api-docs:
