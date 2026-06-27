@@ -1,4 +1,4 @@
-package com.lemonpay.exchange.application;
+package com.lemonpay.exchange.application.port.outbound;
 
 public class ExchangeRateProviderException extends RuntimeException {
 

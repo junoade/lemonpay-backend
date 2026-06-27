@@ -1,6 +1,8 @@
 package com.lemonpay.exchange.application;
 
 import com.lemonpay.common.domain.Currency;
+import com.lemonpay.exchange.application.port.outbound.ExchangeRateProvider;
+import com.lemonpay.exchange.application.port.outbound.ExchangeRateProviderException;
 import com.lemonpay.exchange.domain.ExchangeRate;
 import com.lemonpay.exchange.domain.ExchangeRateHistory;
 import com.lemonpay.exchange.domain.ExchangeRateHistoryRepository;

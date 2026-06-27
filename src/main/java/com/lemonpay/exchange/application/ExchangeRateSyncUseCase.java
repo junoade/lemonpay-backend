@@ -1,9 +1,10 @@
 package com.lemonpay.exchange.application;
 
 import com.lemonpay.common.domain.Currency;
+import com.lemonpay.exchange.application.port.outbound.ExchangeRateProvider;
+import com.lemonpay.exchange.application.port.outbound.ExchangeRateProviderException;
 import com.lemonpay.exchange.domain.ExchangeRate;
 import com.lemonpay.exchange.domain.ExchangeRateHistory;
-import com.lemonpay.exchange.domain.ExchangeRateHistoryRepository;
 import com.lemonpay.exchange.domain.ExchangeRateRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,7 +21,7 @@ public class ExchangeRateSyncUseCase {
     private final ExchangeRateRepository exchangeRateRepository;
     private final ExchangeRateHistoryAppender exchangeRateHistoryAppender;
     private final ExchangeRateSyncPolicy syncPolicy;
-    private final ExchangeRateHistoryRepository exchangeRateHistoryRepository;
+    private final ExchangeRateQueryService exchangeRateQueryService;
 
     @Transactional
     public ExchangeRateSnapshot syncExchangeRate(Currency baseCurrency, Currency targetCurrency) {
@@ -32,8 +33,8 @@ public class ExchangeRateSyncUseCase {
             ExchangeRateHistory savedHistory = exchangeRateHistoryAppender.appendOfficial(fetchedSnapshot);
             return upsertMasterAndReturn(savedHistory);
         } catch (ExchangeRateProviderException e) {
-            ExchangeRateHistory sourceOfficialHistory = exchangeRateHistoryRepository
-                    .findLatestOfficial(baseCurrency, targetCurrency)
+            ExchangeRateHistory sourceOfficialHistory = exchangeRateQueryService
+                    .findLatestOfficialHistory(baseCurrency, targetCurrency)
                     .orElseThrow(() -> e);
             ExchangeRateHistory savedHistory = exchangeRateHistoryAppender.appendDbFallback(sourceOfficialHistory);
             return upsertMasterAndReturn(savedHistory);

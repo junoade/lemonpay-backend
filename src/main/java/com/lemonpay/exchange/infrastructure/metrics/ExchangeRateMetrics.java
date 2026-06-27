@@ -32,7 +32,7 @@ public class ExchangeRateMetrics {
             incrementSyncCounter(pair, status);
             recordSyncDuration(pair, status, duration);
         } catch (Exception e) {
-            log.warn("failed to record metrics %s, caused by %s".formatted(SYNC_METRIC_NAME, e));
+            log.warn("failed to record metrics {}, caused by", SYNC_METRIC_NAME, e);
         }
     }
 
@@ -41,7 +41,7 @@ public class ExchangeRateMetrics {
             incrementSyncCounter(pair, FAILED_STATUS);
             recordSyncDuration(pair, FAILED_STATUS, duration);
         } catch (Exception e) {
-            log.warn("failed to record metrics %s, caused by %s".formatted(SYNC_METRIC_NAME, e));
+            log.warn("failed to record metrics {}, caused by", SYNC_METRIC_NAME, e);
         }
 
     }
