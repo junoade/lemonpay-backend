@@ -4,17 +4,19 @@ import com.lemonpay.exchange.domain.ExchangeRateHistory;
 import com.lemonpay.exchange.domain.ExchangeRateHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+/**
+ * 환율 이력 append 전용 컴포넌트.
+ * 트랜잭션 경계는 ExchangeRateSyncUseCase에서 관리한다.
+ */
 @Service
 @RequiredArgsConstructor
 public class ExchangeRateHistoryAppender {
     private final ExchangeRateHistoryRepository exchangeRateHistoryRepository;
 
-    @Transactional
     public ExchangeRateHistory appendOfficial(ExchangeRateSnapshot snapshot) {
         Optional<ExchangeRateHistory> latestHistory = exchangeRateHistoryRepository.findLatestByCurrencyPairAndRateDate(
                 snapshot.baseCurrency(),
@@ -33,7 +35,6 @@ public class ExchangeRateHistoryAppender {
      * @param officialHistory
      * @return
      */
-    @Transactional
     public ExchangeRateHistory appendDbFallback(ExchangeRateHistory officialHistory) {
         /*
          * DB_FALLBACK policy:
