@@ -1,7 +1,7 @@
 package com.lemonpay.exchange.infrastructure.provider.stub;
 
 import com.lemonpay.common.domain.Currency;
-import com.lemonpay.exchange.application.ExchangeRateProvider;
+import com.lemonpay.exchange.application.port.outbound.ExchangeRateProvider;
 import com.lemonpay.exchange.application.ExchangeRateSnapshot;
 import com.lemonpay.exchange.domain.ExchangeRateSource;
 import com.lemonpay.exchange.domain.ExchangeRateType;

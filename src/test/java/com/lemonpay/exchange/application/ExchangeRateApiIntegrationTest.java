@@ -1,6 +1,7 @@
 package com.lemonpay.exchange.application;
 
 import com.lemonpay.common.domain.Currency;
+import com.lemonpay.exchange.application.port.outbound.ExchangeRateProvider;
 import com.lemonpay.exchange.domain.*;
 import com.lemonpay.exchange.infrastructure.provider.exchangeapi.ExchangeRateApiProperties;
 import org.junit.jupiter.api.Assumptions;
