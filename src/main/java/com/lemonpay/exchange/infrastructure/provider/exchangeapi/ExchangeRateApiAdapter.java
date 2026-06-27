@@ -86,6 +86,10 @@ public class ExchangeRateApiAdapter implements ExchangeRateProvider {
                                                          Currency targetCurrency,
                                                          LocalDate rateDate,
                                                          Throwable throwable) {
+        /**
+         * CoreException은 API key 누락, 지원하지 않는 통화 등 외부 Provider 장애가 아닌 설정/요청 오류다.
+         * CB 통계에서 제외하고, DB fallback 대상인 ExchangeRateProviderException으로 변환하지 않는다.
+         */
         if(throwable instanceof CoreException e) {
             throw e;
         }
