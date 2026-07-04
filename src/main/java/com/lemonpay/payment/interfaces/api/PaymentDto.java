@@ -1,6 +1,7 @@
 package com.lemonpay.payment.interfaces.api;
 
 import com.lemonpay.common.domain.Currency;
+import com.lemonpay.common.interfaces.ApiTime;
 import com.lemonpay.payment.application.PaymentCommand;
 import com.lemonpay.payment.application.PaymentResult;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -9,7 +10,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Schema(description = "결제 API 요청 및 응답 DTO")
@@ -81,13 +82,13 @@ public class PaymentDto {
             BigDecimal exchangeRate,
 
             @Schema(description = "결제 요청 생성 시각")
-            LocalDateTime createdAt,
+            OffsetDateTime createdAt,
 
             @Schema(description = "결제 요청 완료 시각, 완료 전이면 null")
-            LocalDateTime completedAt,
+            OffsetDateTime completedAt,
 
             @Schema(description = "결제 요청 취소 시각, 취소 전이면 null")
-            LocalDateTime cancelledAt
+            OffsetDateTime cancelledAt
     ) {
         public static PaymentDto.PaymentResponse from(PaymentResult result) {
             return new PaymentDto.PaymentResponse(
@@ -101,9 +102,9 @@ public class PaymentDto {
                     result.settlementAmount(),
                     result.settlementCurrency(),
                     result.exchangeRate(),
-                    result.createdAt(),
-                    result.completedAt(),
-                    result.cancelledAt()
+                    ApiTime.toOffset(result.createdAt()),
+                    ApiTime.toOffset(result.completedAt()),
+                    ApiTime.toOffset(result.cancelledAt())
             );
         }
     }

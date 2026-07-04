@@ -1,12 +1,13 @@
 package com.lemonpay.exchange.interfaces;
 
+import com.lemonpay.common.interfaces.ApiTime;
 import com.lemonpay.exchange.application.ExchangeRateSnapshot;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 
 @Schema(description = "환율 조회 API 요청 및 응답 DTO")
@@ -38,7 +39,7 @@ public class ExchangeRateDto {
             int roundNo,
             String rateType,
             String source,
-            LocalDateTime fetchedAt
+            OffsetDateTime fetchedAt
     ) {
         public static RateResponse from(ExchangeRateSnapshot snapshot) {
             return new RateResponse(
@@ -49,7 +50,7 @@ public class ExchangeRateDto {
                     snapshot.roundNo(),
                     snapshot.rateType().name(),
                     snapshot.source().name(),
-                    snapshot.fetchedAt()
+                    ApiTime.toOffset(snapshot.fetchedAt())
             );
         }
 

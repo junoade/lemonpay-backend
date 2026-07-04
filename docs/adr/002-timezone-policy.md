@@ -18,6 +18,13 @@
       - LocalDateTime 저장엔 무관하나, KST 약어 미인식 커넥션 오류 예방 목적
       - 세션 time_zone 강제는 아님(그건 forceConnectionTimeZoneToSession 필요)
 - 엔티티 시각 타입은 LocalDateTime을 사용한다.
+- API 경계 내 시각 필드 직렬화 규칙 (`common/interfaces/ApiTime` 유틸)
+  - 시각(LocalDateTime)에 타임존 offset을 명시하여 OffsetDateTime으로 직렬화함
+  - Zone 없는 직렬화는 클라이언트가 UTC/KST를 추측하게 만들며, 해석 차이로 인한 표시 시각 이중 보정 등의 버그 발생 가능
+  - 업무 날짜(LocalDate, rateDate)는 Zone 없이 그대로 직렬화
+    - 날짜에 타임존 오프셋을 붙이면 시각으로 승격되며 클라이언트 타임존에 따라 날짜가 밀릴 수 있음
+    - 일관성을 위해 LocalDate에 `ApiTime.toOffset`을 **적용하지 말 것** 
+    > (날짜는 특정 시점이 아닌 업무 기준일이며, Zone 개념이 적용되지 않는 것으로 본다)
 
 ## 4. 검증 
 - 회귀 테스트: `TimezoneConfigTest` (Testcontainers MySQL 8.0 기반, 컨테이너 TZ=Asia/Seoul)
