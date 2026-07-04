@@ -27,7 +27,7 @@ resilience4j:
         wait-duration-in-open-state: 30s
         permitted-number-of-calls-in-half-open-state: 2
         recordExceptions:
-          - com.lemonpay.exchange.application.ExchangeRateProviderException
+          - com.lemonpay.exchange.application.port.outbound.ExchangeRateProviderException
         ignore-exceptions:
           - com.lemonpay.common.exception.CoreException
 
