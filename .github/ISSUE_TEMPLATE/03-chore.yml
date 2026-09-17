@@ -1,0 +1,9 @@
+name: "Chore"
+description: "제품 동작 자체가 핵심이 아닌 유지보수성 작업"
+title: "[Chore] "
+labels: ["chore"]
+body:
+  - Context
+  - Goal
+  - Done when
+  - Notes
