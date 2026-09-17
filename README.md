@@ -13,7 +13,7 @@ LemonPay는 단순 CRUD 결제 서비스가 아닌,
 
 등을 직접 설계하고 구현해보는 것을 목표로 합니다.
 
-금융 레거시 시스템에서의 운영 경험을 바탕으로 서비스형 아키텍처 설계를 연습하기 위해 개발했습니다.
+금융 레거시 시스템에서의 운영 경험을 바탕으로 서비스형 아키텍처 설계를 연습하기 위한 프로젝트 입니다.
 
 ## 2. 기술 스택
 - **Language**: Java 21
@@ -31,7 +31,7 @@ LemonPay는 단순 CRUD 결제 서비스가 아닌,
 | 특징                     | 설명                                              |
 |------------------------|-------------------------------------------------|
 | **원장(Ledger) 기반 잔액 관리** | 잔액을 직접 수정하지 않고, 원장(LedgerEntry)에 이벤트를 쌓아 잔액을 계산 |
-| **동시성 제어**             | 동시 결제 충돌 방지                                     |
+| **동시성 제어**             | 동시 결제 충돌 방지, 동시 결제요청 번호 채번 방지                                     |
 | **분산 트랜잭션**            | 충전 → 환전 → 결제의 분산 트랜잭션 고려                        |
 | **Circuit Breaker**    | Resilience4j를 활용한 외부 환율 API 장애 대응               |
 | **멀티통화**               | KRW / USD / JPY, BigDecimal 기반 정밀 금액 처리         |
@@ -39,8 +39,13 @@ LemonPay는 단순 CRUD 결제 서비스가 아닌,
 
 ## 4. 아키텍처 개요
 ```
-API → Application → Domain → Infrastructure
+[Interfaces] ──▶ [Application] ──▶ [Domain]
+                                      ▲
+[Infrastructure] ─────────────────────┘  (domain의 인터페이스를 구현)
 ```
+
+### 주요 유즈케이스 설계 개요
+
 
 
 ## 5. 패키지 구조
@@ -49,8 +54,11 @@ API → Application → Domain → Infrastructure
 com.lemonpay/
 ├── member/        # 회원 도메인
 ├── wallet/        # 지갑/원장 도메인
+├── ledger/        # 원장 도메인
+├── merchant/      # 가맹점 도메인
 ├── payment/       # 결제 도메인 (Saga)
 ├── exchange/      # 환전 도메인
+├── config/        # 컨피그 (Cors, 웹컨피그, API 호출)
 ├── common/        # 공통 VO / 예외
 └── api/           # REST Controller
 ```
@@ -84,4 +92,4 @@ http://localhost:8080/swagger-ui.html
 
 ## 관련 프로젝트
 - **Frontend**: [lemonpay-frontend](../lemonpay-frontend) — Vue 3 + Pinia + Tailwind CSS v4 
-  - 프론트엔드의 경우 claude-code 활용 합니다.
+  - 프론트엔드의 경우 claude-code를 적극 활용합니다.
