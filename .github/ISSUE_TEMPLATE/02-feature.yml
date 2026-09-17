@@ -1,0 +1,133 @@
+name: "Backend Feature"
+description: 백엔드 기능의 요구사항, 설계 경계, 실패와 검증 방법을 정리한다.
+title: "[BE] "
+labels: ["feature"]
+
+body:
+  - type: input
+    id: parent
+    attributes:
+      label: Parent
+      placeholder: "#36"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: 현재 문제와 이 작업이 필요한 이유.
+      placeholder: |
+        현재 WalletBalance와 LedgerEntry의 정합성을
+        사후 검증할 방법이 없다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: 구현 목록이 아니라, 이 작업이 끝나면 가능해지는 것.
+      placeholder: |
+        Ledger를 기준으로 WalletBalance의 불일치를
+        탐지할 수 있다.
+    validations:
+      required: true
+
+  - type: textarea
+    id: rules
+    attributes:
+      label: Rules / Invariants
+      description: 반드시 지켜져야 하는 도메인 규칙. 없다면 N/A.
+      placeholder: |
+        - LedgerEntry는 거래의 원본 기록이다.
+        - 정상 상태에서 Ledger 합계와 WalletBalance는 일치한다.
+        - 대사 과정에서 원장 데이터를 변경하지 않는다.
+
+  - type: textarea
+    id: design
+    attributes:
+      label: Design
+      description: 구현 전 중요한 흐름과 경계만 기록한다. 필요 없는 항목은 N/A.
+      placeholder: |
+        Flow:
+        Scheduler → ReconciliationService → Ledger / WalletBalance
+
+        Transaction:
+        - Read-only
+
+        Source of Truth:
+        - LedgerEntry
+
+        Idempotency / Concurrency:
+        - 동일 범위를 다시 대사해도 결과가 달라지지 않는다.
+
+        External / Event Boundary:
+        - N/A
+
+  - type: textarea
+    id: failure
+    attributes:
+      label: Failure Cases
+      description: 어디서 실패할 수 있고, 실패 후 어떤 상태가 남아야 하는가.
+      placeholder: |
+        | Case | Expected behavior |
+        |------|-------------------|
+        | Ledger 조회 실패 | 대사 실패로 기록한다 |
+        | Balance 없음 | mismatch로 탐지한다 |
+        | Ledger != Balance | mismatch로 탐지한다 |
+
+  - type: textarea
+    id: observability
+    attributes:
+      label: Observability / Recovery
+      description: 실패를 어떻게 발견하고 복구할지 적는다. 필요 없으면 N/A.
+      placeholder: |
+        Observe:
+        - walletId
+        - currency
+        - ledgerBalance
+        - walletBalance
+        - difference
+
+        Recovery:
+        - 재실행 가능
+        - 자동 잔액 보정은 하지 않음
+
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: 외부에서 확인 가능한 완료 조건.
+      value: |
+        - [ ] 
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: test
+    attributes:
+      label: Test
+      description: 구현보다 먼저 검증할 시나리오를 적는다.
+      placeholder: |
+        - [ ] Happy:
+        - [ ] Edge:
+        - [ ] Failure:
+        - [ ] Idempotency / Concurrency:
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes / Decisions
+      description: 중요한 선택이나 trade-off만 기록. 커지면 ADR로 분리.
+      placeholder: |
+        - Decision:
+        - Trade-off:
+        - ADR:
+
+  - type: input
+    id: dependency
+    attributes:
+      label: Dependency
+      placeholder: "#37 / None"
