@@ -39,9 +39,7 @@ LemonPay는 단순 CRUD 결제 서비스가 아닌,
 
 ## 4. 아키텍처 개요
 ```
-[Interfaces] ──▶ [Application] ──▶ [Domain]
-                                      ▲
-[Infrastructure] ─────────────────────┘  (domain의 인터페이스를 구현)
+API → Application → Domain → Infrastructure
 ```
 
 ### 주요 유즈케이스 설계 개요
