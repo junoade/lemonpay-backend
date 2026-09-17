@@ -1,12 +1,13 @@
 package com.lemonpay.member.interfaces.api;
 
+import com.lemonpay.common.interfaces.ApiTime;
 import com.lemonpay.member.application.MemberCommand;
 import com.lemonpay.member.application.MemberResult;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Schema(description = "회원 관리 API 요청 및 응답 DTO")
@@ -57,9 +58,9 @@ public class MemberDto {
             @Schema(description = "지갑 상품코드")
             String productCode,
             @Schema(description = "회원 가입일자/시간")
-            LocalDateTime createdAt,
+            OffsetDateTime createdAt,
             @Schema(description = "회원 정보 변경일자/시간")
-            LocalDateTime updatedAt
+            OffsetDateTime updatedAt
     ) {
 
         public static MemberResponse from(MemberResult.CommonResult result) {
@@ -72,8 +73,8 @@ public class MemberDto {
                     result.walletId(),
                     result.walletName(),
                     result.walletProductCode(),
-                    result.createdAt(),
-                    result.updateAt()
+                    ApiTime.toOffset(result.createdAt()),
+                    ApiTime.toOffset(result.updateAt())
             );
         }
     }

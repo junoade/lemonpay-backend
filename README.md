@@ -31,7 +31,7 @@ LemonPay는 단순 CRUD 결제 서비스가 아닌,
 | 특징                     | 설명                                              |
 |------------------------|-------------------------------------------------|
 | **원장(Ledger) 기반 잔액 관리** | 잔액을 직접 수정하지 않고, 원장(LedgerEntry)에 이벤트를 쌓아 잔액을 계산 |
-| **동시성 제어**             | 동시 결제 충돌 방지                                     |
+| **동시성 제어**             | 동시 결제 충돌 방지, 동시 결제요청 번호 채번 방지                                   |
 | **분산 트랜잭션**            | 충전 → 환전 → 결제의 분산 트랜잭션 고려                        |
 | **Circuit Breaker**    | Resilience4j를 활용한 외부 환율 API 장애 대응               |
 | **멀티통화**               | KRW / USD / JPY, BigDecimal 기반 정밀 금액 처리         |
@@ -49,8 +49,11 @@ API → Application → Domain → Infrastructure
 com.lemonpay/
 ├── member/        # 회원 도메인
 ├── wallet/        # 지갑/원장 도메인
+├── ledger/        # 원장 도메인
+├── merchant/      # 가맹점 도메인
 ├── payment/       # 결제 도메인 (Saga)
 ├── exchange/      # 환전 도메인
+├── config/        # 컨피그 (Cors, 웹컨피그, API 호출)
 ├── common/        # 공통 VO / 예외
 └── api/           # REST Controller
 ```

@@ -1,6 +1,7 @@
 package com.lemonpay.wallet.interfaces.api;
 
 import com.lemonpay.common.domain.Money;
+import com.lemonpay.common.interfaces.ApiTime;
 import com.lemonpay.wallet.application.ChargeResult;
 import com.lemonpay.wallet.application.LedgerEntryItem;
 import com.lemonpay.wallet.application.WalletQueryResult;
@@ -11,7 +12,7 @@ import jakarta.validation.constraints.Positive;
 import org.springframework.data.domain.Page;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -143,8 +144,8 @@ public class WalletDto {
             @Schema(description = "거래 후 잔액", example = "50000.0000")
             BigDecimal balanceAfter,
 
-            @Schema(description = "거래 일시", example = "2026-04-25T10:00:00")
-            LocalDateTime createdAt
+            @Schema(description = "거래 일시", example = "2026-04-25T10:00:00+09:00")
+            OffsetDateTime createdAt
     ) {
         public static HistoryItem from(LedgerEntryItem item) {
             return new HistoryItem(
@@ -154,7 +155,7 @@ public class WalletDto {
                     item.direction().toString(),
                     item.entryType().toString(),
                     item.balanceAfter(),
-                    item.createdAt()
+                    ApiTime.toOffset(item.createdAt())
             );
         }
     }

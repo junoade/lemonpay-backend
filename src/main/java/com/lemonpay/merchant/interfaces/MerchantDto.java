@@ -1,10 +1,11 @@
 package com.lemonpay.merchant.interfaces;
 
+import com.lemonpay.common.interfaces.ApiTime;
 import com.lemonpay.merchant.domain.Merchant;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,8 +28,8 @@ public class MerchantDto {
             String name,
             String status,
             String callbackUrl,
-            LocalDateTime createdAt,
-            LocalDateTime updatedAt
+            OffsetDateTime createdAt,
+            OffsetDateTime updatedAt
     ) {
         public static MerchantResponse from(Merchant merchant) {
             return new MerchantResponse(
@@ -36,8 +37,8 @@ public class MerchantDto {
                     merchant.getName(),
                     merchant.getStatus().name(),
                     merchant.getCallbackUrl(),
-                    merchant.getCreatedAt(),
-                    merchant.getUpdatedAt()
+                    ApiTime.toOffset(merchant.getCreatedAt()),
+                    ApiTime.toOffset(merchant.getUpdatedAt())
             );
         }
     }
