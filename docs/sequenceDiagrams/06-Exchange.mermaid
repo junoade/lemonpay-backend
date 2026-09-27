@@ -1,0 +1,45 @@
+sequenceDiagram
+    %% ExchangeUseCase
+    %% WalletService, WalletBalanceService
+    %% ExchangeRateQueryService
+    %% LedgerRepository
+
+    participant C as Client
+    participant UC as ExchangeUseCase
+    participant WS as WalletService
+    %% participant WBS as WalletBalanceService
+    participant ERQ as ExchangeRateQueryService
+    participant LR as LedgerRepository
+
+    %% start
+    C ->> UC: exchange(walletId, base, target, amount)
+    Note over UC: BEGIN TX
+
+    %% 의도적으로 간략하게 기술함
+    UC ->> WS: 지갑 및 잔액 조회
+    WS -->> UC: Wallet + Balances 반환
+
+    %% 의도적으로 간략하게 기술
+    UC ->> ERQ: 최신 환율 조회
+    ERQ -->> UC: 최신 환율 반환
+
+    %% 중요
+    UC ->> UC: 환전 금액 계산
+
+    UC ->> WS: 잔액 변경
+    Note over WS: Base 통화 잔액 차감 + Target 통화 잔액 증가
+
+    UC ->> LR : 환전 원장 기록 (2건)
+
+    alt success
+        Note over UC: COMMIT
+        UC -->> C: ExchangeResult
+    else failure
+        Note over UC: ROLLBACK
+        UC -->> C: error
+    end
+
+
+
+
+
