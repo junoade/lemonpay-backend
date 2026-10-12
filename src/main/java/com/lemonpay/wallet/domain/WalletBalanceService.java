@@ -4,7 +4,9 @@ import com.lemonpay.common.domain.Currency;
 import com.lemonpay.common.exception.CoreException;
 import com.lemonpay.common.exception.ErrorType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -34,6 +36,16 @@ public class WalletBalanceService {
             throw new CoreException(ErrorType.WALLET_NOT_FOUND);
         }
         return walletBalances;
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public WalletBalance getWalletBalanceWithLock(UUID walletId, Currency currency) {
+        try {
+            return walletBalanceRepository.findForUpdateByWalletIdAndCurrency(walletId, currency)
+                    .orElseThrow(() -> new CoreException(ErrorType.WALLET_NOT_FOUND));
+        } catch (PessimisticLockingFailureException e) {
+            throw new CoreException(ErrorType.BALANCE_LOCK_CONFLICT);
+        }
     }
 
 }

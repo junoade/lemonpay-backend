@@ -44,7 +44,7 @@ public class WalletBalance extends BaseEntity {
         this.wallet = wallet;
         this.currency = currency;
         this.balance = balance;
-        this.version = 0L;
+        this.version = 0L; // TODO save() 시 persist vs merge
     }
 
     public static WalletBalance zero(Wallet wallet, Currency currency) {

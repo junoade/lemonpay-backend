@@ -29,4 +29,9 @@ public class WalletBalanceRepositoryImpl implements WalletBalanceRepository {
     public List<WalletBalance> findAllByWalletId(UUID walletId) {
         return walletBalanceRepository.findAllByWalletId(walletId);
     }
+
+    @Override
+    public Optional<WalletBalance> findForUpdateByWalletIdAndCurrency(UUID walletId, Currency currency) {
+        return walletBalanceRepository.findForUpdateByWalletIdAndCurrency(walletId, currency);
+    }
 }

@@ -17,6 +17,9 @@ public enum ErrorType {
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증이 필요합니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "허용되지 않은 접근입니다."),
 
+    // 409
+    BALANCE_LOCK_CONFLICT(HttpStatus.CONFLICT, "잔액 변경 중 충돌이 발생했습니다. 처리결과를 확인 후 재시도하세요."),
+
     // 422
     WALLET_NOT_CHARGEABLE(HttpStatus.UNPROCESSABLE_ENTITY, "충전이 불가능한 지갑 상태입니다."),
     INVALID_STATE_TRANSITION(HttpStatus.UNPROCESSABLE_ENTITY, "허용되지 않는 상태 전이입니다."),
