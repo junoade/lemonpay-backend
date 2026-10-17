@@ -2,11 +2,13 @@ package com.lemonpay.wallet.domain;
 
 import com.lemonpay.common.domain.Currency;
 import com.lemonpay.common.domain.Money;
+import com.lemonpay.common.exception.CoreException;
 import com.lemonpay.member.domain.Member;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.scheduling.support.CronExpression;
 
 import java.math.BigDecimal;
 
@@ -100,7 +102,7 @@ class WalletBalanceTest {
         void withSameCurrencyNotEnoughBalance_throwException() {
             WalletBalance walletBalance = wallet.getBalance(Currency.KRW);
 
-            assertThrows(IllegalArgumentException.class, () -> walletBalance.decrease(Money.won(3000)));
+            assertThrows(CoreException.class, () -> walletBalance.decrease(Money.won(3000)));
         }
 
         @Test
@@ -108,7 +110,7 @@ class WalletBalanceTest {
         void withDifferentCurrency_throwException() {
             WalletBalance walletBalance = wallet.getBalance(Currency.KRW);
 
-            assertThrows(IllegalArgumentException.class, () -> walletBalance.decrease(Money.jpy(2000)));
+            assertThrows(CoreException.class, () -> walletBalance.decrease(Money.jpy(2000)));
         }
     }
 
