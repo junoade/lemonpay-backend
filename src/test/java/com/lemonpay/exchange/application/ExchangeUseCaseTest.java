@@ -233,7 +233,7 @@ class ExchangeUseCaseTest {
         }
 
         @Test
-        @DisplayName("기준 통화 잔액이 부족하면 두 잔액을 유지하고 거래·원장을 저장하지 않는다.")
+        @DisplayName("기준 통화 잔액이 부족하면 비즈니스 예외를 던지고, 두 잔액과 거래·원장을 변경하지 않는다.")
         void rejectsInsufficientBalance() {
             Wallet wallet = activeWallet();
             stubRate(Currency.USD, Currency.KRW, "1350.00000000");
@@ -241,7 +241,10 @@ class ExchangeUseCaseTest {
             WalletBalance target = stubLockedBalance(wallet, Money.won(10_000));
 
             assertThatThrownBy(() -> useCase.exchange(command(Currency.USD, Currency.KRW, "100")))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOfSatisfying(CoreException.class, e -> {
+                        assertThat(e.getErrorType())
+                                .isEqualTo(ErrorType.WALLET_BALANCE_INSUFFICIENT);
+                    })
                     .hasMessage("잔액 부족");
             assertThat(base.toMoney()).isEqualTo(Money.usd("99.99"));
             assertThat(target.toMoney()).isEqualTo(Money.won(10_000));

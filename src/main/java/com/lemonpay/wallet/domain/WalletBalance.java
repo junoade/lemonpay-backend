@@ -3,6 +3,8 @@ package com.lemonpay.wallet.domain;
 import com.lemonpay.common.domain.BaseEntity;
 import com.lemonpay.common.domain.Currency;
 import com.lemonpay.common.domain.Money;
+import com.lemonpay.common.exception.CoreException;
+import com.lemonpay.common.exception.ErrorType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -66,14 +68,14 @@ public class WalletBalance extends BaseEntity {
 
         BigDecimal newBalance = this.balance.subtract(money.amount());
         if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException("잔액 부족");
+            throw new CoreException(ErrorType.WALLET_BALANCE_INSUFFICIENT, "잔액 부족");
         }
         this.balance = newBalance;
     }
 
     private void validateCurrency(Money money) {
         if (this.currency != money.currency()) {
-            throw new IllegalArgumentException("통화 불일치");
+            throw new CoreException(ErrorType.INVALID_REQUEST, "통화 불일치");
         }
     }
 }

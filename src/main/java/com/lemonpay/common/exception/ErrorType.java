@@ -23,6 +23,7 @@ public enum ErrorType {
     // 422
     WALLET_NOT_CHARGEABLE(HttpStatus.UNPROCESSABLE_ENTITY, "충전이 불가능한 지갑 상태입니다."),
     INVALID_STATE_TRANSITION(HttpStatus.UNPROCESSABLE_ENTITY, "허용되지 않는 상태 전이입니다."),
+    WALLET_BALANCE_INSUFFICIENT(HttpStatus.UNPROCESSABLE_ENTITY, "지갑 잔액이 부족합니다."),
 
     // 5xx
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다.");
