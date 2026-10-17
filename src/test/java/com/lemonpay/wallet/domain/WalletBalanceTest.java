@@ -3,6 +3,7 @@ package com.lemonpay.wallet.domain;
 import com.lemonpay.common.domain.Currency;
 import com.lemonpay.common.domain.Money;
 import com.lemonpay.common.exception.CoreException;
+import com.lemonpay.common.exception.ErrorType;
 import com.lemonpay.member.domain.Member;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,6 +14,7 @@ import org.springframework.scheduling.support.CronExpression;
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class WalletBalanceTest {
@@ -53,7 +55,10 @@ class WalletBalanceTest {
         void withDifferentCurrency_throwException() {
             WalletBalance walletBalance = wallet.getBalance(Currency.KRW);
 
-            assertThrows(IllegalArgumentException.class, () -> walletBalance.increase(Money.jpy(2000)));
+            assertThatThrownBy(() -> walletBalance.increase(Money.jpy(2000)))
+                    .isInstanceOfSatisfying(CoreException.class, e -> {
+                        assertThat(e.getErrorType()).isEqualTo(ErrorType.INVALID_REQUEST);
+                    });
         }
 
     }
@@ -102,7 +107,11 @@ class WalletBalanceTest {
         void withSameCurrencyNotEnoughBalance_throwException() {
             WalletBalance walletBalance = wallet.getBalance(Currency.KRW);
 
-            assertThrows(CoreException.class, () -> walletBalance.decrease(Money.won(3000)));
+            assertThatThrownBy(() -> walletBalance.decrease(Money.won(3000)))
+                    .isInstanceOfSatisfying(CoreException.class, e -> {
+                        assertThat(e.getErrorType()).isEqualTo(ErrorType.WALLET_BALANCE_INSUFFICIENT);
+                    })
+                    .hasMessage("잔액 부족");
         }
 
         @Test
@@ -110,7 +119,10 @@ class WalletBalanceTest {
         void withDifferentCurrency_throwException() {
             WalletBalance walletBalance = wallet.getBalance(Currency.KRW);
 
-            assertThrows(CoreException.class, () -> walletBalance.decrease(Money.jpy(2000)));
+            assertThatThrownBy(() -> walletBalance.decrease(Money.jpy(2000)))
+                    .isInstanceOfSatisfying(CoreException.class, e -> {
+                        assertThat(e.getErrorType()).isEqualTo(ErrorType.INVALID_REQUEST);
+                    });
         }
     }
 
