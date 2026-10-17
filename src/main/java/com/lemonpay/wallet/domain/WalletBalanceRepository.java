@@ -13,4 +13,6 @@ public interface WalletBalanceRepository {
     Optional<WalletBalance> findByWalletIdAndCurrency(UUID walletId, Currency currency);
 
     List<WalletBalance> findAllByWalletId(UUID walletId);
+
+    Optional<WalletBalance> findForUpdateByWalletIdAndCurrency(UUID walletId, Currency currency);
 }

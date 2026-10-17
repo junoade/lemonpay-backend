@@ -1,0 +1,58 @@
+sequenceDiagram
+    participant C as Client
+    participant UC as ExchangeUseCase
+    %% Service
+    participant WS as WalletService
+    participant WBS as WalletBalanceService
+    participant ERQ as ExchangeRateQueryService
+    %% Entity
+    participant B as Base WalletBalance
+    participant T as Target WalletBalance
+    %% Repository
+    participant ETR as ExchangeTransactionRepository
+    participant LR as LedgerEntryRepository
+
+    Note over UC: ExchangeCommand(walletId, base, target, amount, idempotencyKey)
+    C ->> UC: exchange(command)
+    Note over UC: BEGIN TX (Spring 트랜잭션 프록시)
+    Note over UC: TX 내 어느 단계에서든 예외 발생 시 이후 단계 중단
+
+    alt 정상 처리 경로
+        UC ->> UC: 입력값 검증
+        UC ->> WS: validateWalletAccess(walletId, userId)
+        WS -->> UC: 소유권 검증 통과
+        UC ->> WS: getWallet(walletId)
+        WS -->> UC: Wallet
+        UC ->> UC: Wallet 상태가 ACTIVE인지 검증
+
+        UC ->> ERQ: getLatestExchangeRate(base, target)
+        ERQ -->> UC: ExchangeRateSnapshot
+        UC ->> UC: ExchangeRate 변환 및 ExchangeQuote 계산
+        UC ->> UC: 정규화된 기준 금액과 환산 금액이 0인지 검증
+
+        Note over UC: 두 통화를 통화코드 오름차순으로 정렬
+        loop 정렬된 두 통화 (요청 방향과 무관)
+            UC ->> WBS: getWalletBalanceWithLock(walletId, currency)
+            WBS -->> UC: WalletBalance (비관적 쓰기 락 조회)
+            UC ->> UC: 반환된 잔액을 Map에 저장
+        end
+
+        UC ->> B: decrease(quote.baseMoney)
+        Note over B: 락 조회로 얻은 잔액으로 부족 여부 검증 후 차감
+        UC ->> T: increase(quote.targetMoney)
+        Note over B,T: 관리 상태 엔티티의 잔액 변경은 TX 내 dirty checking으로 반영
+
+        UC ->> UC: ExchangeTransaction.completed(...) 생성
+        UC ->> ETR: save(transaction)
+        ETR -->> UC: 저장된 ExchangeTransaction
+        UC ->> LR: save(FX_WITHDRAW 원장)
+        UC ->> LR: save(FX_DEPOSIT 원장)
+        UC ->> UC: ExchangeResult 생성
+
+        Note over UC: COMMIT 및 획득한 락 해제 (Spring 트랜잭션 프록시)
+        UC -->> C: ExchangeResult
+    else 어느 단계에서든 런타임 예외 발생 가능
+        Note over UC: 환율 조회 실패 시에는 잔액 락 획득 전 중단
+        Note over UC: 잔액 변경,거래,원장 기록 전체 ROLLBACK 및 획득한 락 해제
+        UC -->> C: 예외 전파 (HTTP 오류 변환은 API 계층에서 처리)
+    end
