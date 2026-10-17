@@ -1,5 +1,6 @@
 package com.lemonpay.config;
 
+import com.lemonpay.exchange.interfaces.ExchangeV1Controller;
 import com.lemonpay.merchant.interfaces.MerchantV1Controller;
 import com.lemonpay.payment.interfaces.api.PaymentV1Controller;
 import com.lemonpay.wallet.interfaces.api.WalletV1Controller;
@@ -58,6 +59,7 @@ public class OpenApiConfig {
         Class<?> controllerType = handlerMethod.getBeanType();
         return controllerType == WalletV1Controller.class
                 // || controllerType == MerchantV1Controller.class
-                || controllerType == PaymentV1Controller.class;
+                || controllerType == PaymentV1Controller.class
+                || controllerType == ExchangeV1Controller.class;
     }
 }
